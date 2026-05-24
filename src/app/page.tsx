@@ -1,65 +1,72 @@
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
 
-export default function Home() {
+const portals = [
+  {
+    href: '/login',
+    emoji: '🏛️',
+    title: 'Oda Yönetimi',
+    desc: 'Duyuru, üye, finans ve operasyon yönetimi',
+    accent: 'border-iteo-yellow bg-iteo-yellow/10',
+  },
+  {
+    href: '/giris?rol=sofor',
+    emoji: '🚕',
+    title: 'Şoför',
+    desc: 'Hasılat, gider, plaka ve vardiya işlemleri',
+    accent: 'border-white/20 bg-white/5',
+  },
+  {
+    href: '/giris?rol=mal-sahibi',
+    emoji: '🏷️',
+    title: 'Mal / Plaka Sahibi',
+    desc: 'Plaka yönetimi, gelir-gider ve aidat takibi',
+    accent: 'border-white/20 bg-white/5',
+  },
+  {
+    href: '/giris?rol=uye',
+    emoji: '👤',
+    title: 'Oda Üyesi',
+    desc: 'Duyuru, haber, ödeme ve randevu hizmetleri',
+    accent: 'border-white/20 bg-white/5',
+  },
+] as const;
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-iteo-black text-white">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
+        <div className="mb-12 flex flex-col items-center text-center">
+          <Image src="/iteo_logo.jpeg" alt="İTEO Logo" width={96} height={96} className="mb-6 rounded-2xl" />
+          <p className="text-sm font-semibold uppercase tracking-wide text-iteo-yellow">
+            İstanbul Taksiciler Esnaf Odası
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">İTEO Dijital Portal</h1>
+          <p className="mt-4 max-w-xl text-white/70">
+            Devam etmek için size uygun giriş türünü seçin. Her rol için özelleştirilmiş panel açılır.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {portals.map((portal) => (
+            <Link
+              key={portal.href}
+              href={portal.href}
+              className={`group flex items-start gap-4 rounded-2xl border p-6 transition hover:border-iteo-yellow hover:bg-iteo-yellow/10 ${portal.accent}`}>
+              <span className="text-3xl">{portal.emoji}</span>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold group-hover:text-iteo-yellow">{portal.title}</h2>
+                <p className="mt-1 text-sm text-white/60">{portal.desc}</p>
+              </div>
+              <span className="text-xl text-iteo-yellow opacity-0 transition group-hover:opacity-100">→</span>
+            </Link>
+          ))}
         </div>
-      </main>
+
+        <p className="mt-12 text-center text-sm text-white/40">
+          © {new Date().getFullYear()} İstanbul Taksiciler Esnaf Odası
+        </p>
+      </div>
     </div>
   );
 }
