@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { registerMember } from '@/lib/auth/client';
 import { MemberAuthShell } from '@/components/member/MemberAuthShell';
 import {
   friendlyAuthError,
@@ -44,32 +44,25 @@ export function MemberRegisterForm({ roleSlug }: Props) {
     }
 
     setLoading(true);
-    const supabase = createClient();
     const intendedRole = roleSlugToMemberRole[roleSlug];
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { intended_role: intendedRole },
-      },
-    });
+    try {
+      const result = await registerMember(email, password, intendedRole);
+      setLoading(false);
 
-    setLoading(false);
+      if (result.accessToken) {
+        window.location.href = '/panel/onboarding';
+        return;
+      }
 
-    if (signUpError) {
-      setError(friendlyAuthError(signUpError.message));
-      return;
+      setSuccess(
+        result.message ??
+          'Kayıt oluşturuldu. E-posta doğrulama linki gönderildiyse gelen kutunuzu kontrol edin, ardından giriş yapabilirsiniz.',
+      );
+    } catch (err) {
+      setLoading(false);
+      setError(friendlyAuthError((err as Error).message));
     }
-
-    if (data.session) {
-      window.location.href = '/panel/onboarding';
-      return;
-    }
-
-    setSuccess(
-      'Kayıt oluşturuldu. E-posta doğrulama linki gönderildiyse gelen kutunuzu kontrol edin, ardından giriş yapabilirsiniz.',
-    );
   }
 
   const loginHref = `/giris?rol=${roleSlug}`;

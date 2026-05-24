@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { api, ApiResponse } from '@/lib/api/client';
+import { api, ApiResponse, getAccessToken } from '@/lib/api/client';
 import { ErrorBlock, LoadingBlock, PageHeader, StatCard } from '@/components/admin/AdminUi';
 
 interface FinanceRow {
@@ -127,9 +126,7 @@ export default function FinanceAdminPage() {
       if (typeFilter !== 'all') params.set('type', typeFilter);
       if (vehicleFilter) params.set('vehicleId', vehicleFilter);
 
-      const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
+      const token = await getAccessToken();
       if (!token) throw new Error('Oturum bulunamadı');
 
       const response = await fetch(`${API_URL}/admin/finance/export?${params}`, {

@@ -1,33 +1,15 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  getAccessTokenFromRequestCookies,
+  getUserRoleFromRequestCookies,
+} from '@/lib/auth/session';
 
 const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const accessToken = getAccessTokenFromRequestCookies(request.cookies);
+  const role = getUserRoleFromRequestCookies(request.cookies);
+  const isAuthenticated = !!accessToken;
 
   const path = request.nextUrl.pathname;
   const isDashboard = path.startsWith('/dashboard');
@@ -35,43 +17,33 @@ export async function middleware(request: NextRequest) {
   const isPanel = path.startsWith('/panel');
   const isMemberAuth = path.startsWith('/giris');
 
-  let role: string | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    role = profile?.role ?? null;
-  }
-
-  if (isDashboard && !user) {
+  if (isDashboard && !isAuthenticated) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (isDashboard && user && role && !ADMIN_ROLES.includes(role)) {
+  if (isDashboard && isAuthenticated && role && !ADMIN_ROLES.includes(role)) {
     return NextResponse.redirect(new URL('/panel', request.url));
   }
 
-  if (isAdminLogin && user && role && ADMIN_ROLES.includes(role)) {
+  if (isAdminLogin && isAuthenticated && role && ADMIN_ROLES.includes(role)) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  if (isPanel && !user) {
+  if (isPanel && !isAuthenticated) {
     const rol = request.nextUrl.searchParams.get('rol');
     const girisUrl = rol ? `/giris?rol=${rol}` : '/giris';
     return NextResponse.redirect(new URL(girisUrl, request.url));
   }
 
-  if (isPanel && user && role && ADMIN_ROLES.includes(role)) {
+  if (isPanel && isAuthenticated && role && ADMIN_ROLES.includes(role)) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (isMemberAuth && user) {
+  if (isMemberAuth && isAuthenticated) {
     return NextResponse.redirect(new URL('/panel', request.url));
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {

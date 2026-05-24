@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { loginMember, logoutSession } from '@/lib/auth/client';
 import { fetchCurrentProfile } from '@/lib/member-profile';
 import { MemberAuthShell } from '@/components/member/MemberAuthShell';
 import {
   friendlyAuthError,
-  getLoginIntent,
   loginPortalCopy,
   setLoginIntent,
   type MemberRoleSlug,
@@ -33,25 +32,20 @@ export function MemberLoginForm({ roleSlug }: Props) {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (signInError) {
-      setError(friendlyAuthError(signInError.message));
+    try {
+      await loginMember(email, password);
+      const profile = await fetchCurrentProfile();
+      if (profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN') {
+        await logoutSession();
+        setError('Yönetici hesapları üye panelinden giriş yapamaz. Lütfen yönetim girişini kullanın.');
+        setLoading(false);
+        return;
+      }
+      window.location.href = '/panel';
+    } catch (err) {
+      setError(friendlyAuthError((err as Error).message));
       setLoading(false);
-      return;
     }
-
-    const profile = await fetchCurrentProfile();
-    if (profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN') {
-      await supabase.auth.signOut();
-      setError('Yönetici hesapları üye panelinden giriş yapamaz. Lütfen yönetim girişini kullanın.');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    window.location.href = '/panel';
   }
 
   const registerHref = `/giris/kayit?rol=${roleSlug}`;

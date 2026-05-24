@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { loginAdmin } from '@/lib/auth/client';
 
 function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
@@ -14,12 +14,14 @@ function friendlyAuthError(message: string): string {
   if (m.includes('email not confirmed')) {
     return 'E-posta adresiniz henüz doğrulanmamış.';
   }
-  return 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
+  if (m.includes('admin yetkisi')) {
+    return 'Admin yetkisi gerekli';
+  }
+  return message || 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
 }
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,32 +32,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setError(friendlyAuthError(signInError.message));
+    try {
+      await loginAdmin(email, password);
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err) {
+      setError(friendlyAuthError((err as Error).message));
       setLoading(false);
-      return;
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
-
-    if (!profile || !['ADMIN', 'SUPER_ADMIN'].includes(profile.role)) {
-      await supabase.auth.signOut();
-      setError('Admin yetkisi gerekli');
-      setLoading(false);
-      return;
-    }
-
-    router.push('/dashboard');
-    router.refresh();
   }
 
   return (

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { logoutSession } from '@/lib/auth/client';
 import { memberNavItems, getMemberNavLabel, roleDashboardTitles, type MemberRole } from '@/lib/member';
 
 interface Props {
@@ -18,8 +18,7 @@ export function MemberShell({ role, userName, children }: Props) {
   const visibleNav = memberNavItems.filter((item) => item.roles.includes(role));
 
   async function logout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await logoutSession();
     router.push('/');
     router.refresh();
   }

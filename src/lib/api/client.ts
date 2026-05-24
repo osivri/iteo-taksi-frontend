@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
+import { getAccessToken, refreshAccessToken } from '@/lib/auth/client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
@@ -12,17 +12,8 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-async function getAccessToken(): Promise<string | null> {
-  const supabase = createClient();
-  const { data } = await supabase.auth.getSession();
-  if (data.session?.access_token) return data.session.access_token;
-
-  const { data: refreshed } = await supabase.auth.refreshSession();
-  return refreshed.session?.access_token ?? null;
-}
-
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await getAccessToken();
+  let token = await getAccessToken();
   if (!token) throw new Error('Oturum bulunamadı');
 
   const headers: Record<string, string> = {
@@ -34,7 +25,15 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let response = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if (response.status === 401) {
+    token = await refreshAccessToken();
+    if (!token) throw new Error('Oturum bulunamadı');
+    headers.Authorization = `Bearer ${token}`;
+    response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  }
+
   const json = (await response.json()) as ApiResponse<T> & T;
 
   if (!response.ok) {
@@ -54,3 +53,5 @@ export const api = {
   upload: <T>(path: string, formData: FormData) =>
     apiFetch<T>(path, { method: 'POST', body: formData }),
 };
+
+export { getAccessToken };

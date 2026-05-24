@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { logoutSession } from '@/lib/auth/client';
 
 export function AdminHeaderActions() {
   const router = useRouter();
 
   async function logout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await logoutSession();
     router.push('/login');
     router.refresh();
   }
