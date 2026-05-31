@@ -1,17 +1,54 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { completeOnboarding } from '@/lib/member-profile';
-import { getRegistrationRole, registrationRoleLabel } from '@/lib/member';
+import { useRouter } from 'next/navigation';
+import { completeOnboarding, fetchCurrentProfile } from '@/lib/member-profile';
+import {
+  getRegistrationRole,
+  needsKvkkAcceptance,
+  needsProfileSetup,
+  registrationRoleLabel,
+  type MemberRole,
+} from '@/lib/member';
 
 export default function PanelOnboardingPage() {
-  const role = useMemo(() => getRegistrationRole(), []);
+  const router = useRouter();
+  const fallbackRole = useMemo(() => getRegistrationRole(), []);
+  const [role, setRole] = useState<MemberRole>(fallbackRole);
   const roleLabel = registrationRoleLabel(role);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCurrentProfile()
+      .then((profile) => {
+        if (!profile) return;
+
+        const memberRole =
+          profile.role === 'DRIVER' || profile.role === 'PLATE_OWNER' || profile.role === 'USER'
+            ? profile.role
+            : fallbackRole;
+        setRole(memberRole);
+
+        if (!needsProfileSetup(profile)) {
+          router.replace(needsKvkkAcceptance(profile) ? '/panel/kvkk' : '/panel');
+          return;
+        }
+
+        if (profile.firstName && profile.firstName !== 'İTEO') {
+          setFirstName(profile.firstName);
+        }
+        if (profile.lastName && profile.lastName !== 'Üyesi') {
+          setLastName(profile.lastName);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => setChecking(false));
+  }, [fallbackRole, router]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +70,14 @@ export default function PanelOnboardingPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-iteo-black text-white/70">
+        Profil kontrol ediliyor...
+      </div>
+    );
   }
 
   return (

@@ -30,7 +30,6 @@ export function PanelGate({ children }: { children: React.ReactNode }) {
 
       if (!profile) {
         if (!cancelled) {
-          // Oturum var ama profil henüz oluşmadı — onboarding'e yönlendir
           if (pathname !== '/panel/onboarding') {
             router.replace('/panel/onboarding');
           } else {

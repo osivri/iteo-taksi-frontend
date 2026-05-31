@@ -77,6 +77,7 @@ export const memberNavItems: MemberNavItem[] = [
   { href: '/panel/news', label: 'Haberler', icon: '📰', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
   { href: '/panel/payments', label: 'Ödemeler', icon: '💳', roles: ['PLATE_OWNER', 'USER'] },
   { href: '/panel/appointments', label: 'Randevu', icon: '📅', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
+  { href: '/panel/forgotten-items', label: 'Unutulan Eşya', icon: '🧳', roles: ['DRIVER', 'PLATE_OWNER'] },
   { href: '/panel/ohs', label: 'İSG', icon: '🦺', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
   { href: '/panel/help', label: 'Yardım', icon: '❓', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
 ];
@@ -140,7 +141,7 @@ export function friendlyAuthError(message: string): string {
     return 'Şifre yeterince güçlü değil. En az 6 karakter kullanın.';
   }
   if (m.includes('invalid api key') || m.includes('api key')) {
-    return 'Kimlik doğrulama yapılandırması güncel değil. Lütfen yöneticinize bildirin.';
+    return 'Sunucu yapılandırması eksik (Supabase service role key). Lütfen yöneticinize bildirin.';
   }
   if (m.includes('signup') && m.includes('disabled')) {
     return 'Yeni kayıt şu an kapalı. Lütfen oda ile iletişime geçin.';

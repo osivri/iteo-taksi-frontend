@@ -37,7 +37,13 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const json = (await response.json()) as ApiResponse<T> & T;
 
   if (!response.ok) {
-    throw new Error((json as ApiResponse<T>).message ?? 'İstek başarısız');
+    const message =
+      typeof json.message === 'string'
+        ? json.message
+        : Array.isArray(json.message)
+          ? json.message.join(', ')
+          : (json as ApiResponse<T>).message ?? 'İstek başarısız';
+    throw new Error(typeof message === 'string' ? message : 'İstek başarısız');
   }
 
   return json as T;

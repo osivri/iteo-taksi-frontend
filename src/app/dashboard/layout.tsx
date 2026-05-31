@@ -13,6 +13,7 @@ const navItems = [
   { href: "/dashboard/finance", label: "Muhasebe", icon: "📒" },
   { href: "/dashboard/ohs", label: "İSG İçerikleri", icon: "🦺" },
   { href: "/dashboard/appointments", label: "Randevular", icon: "📅" },
+  { href: "/dashboard/forgotten-items", label: "Unutulan Eşya", icon: "🧳" },
   { href: "/dashboard/notifications", label: "Bildirimler", icon: "🔔" },
   { href: "/dashboard/reports", label: "Raporlar", icon: "📈" },
 ];
