@@ -55,7 +55,7 @@ export default function PanelForgottenItemsPage() {
     const p = await fetchCurrentProfile();
     setProfile(p);
 
-    if (p.role !== 'DRIVER' && p.role !== 'PLATE_OWNER') return;
+    if (!p || (p.role !== 'DRIVER' && p.role !== 'PLATE_OWNER')) return;
 
     const [itemsRes, vehiclesRes] = await Promise.all([
       api.get<ApiResponse<ForgottenItem> & { items: ForgottenItem[] }>('/forgotten-items'),

@@ -86,11 +86,11 @@ export default function PanelVehiclesPage() {
     setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
     setRequests(Array.isArray(requestsRes.data) ? requestsRes.data : []);
 
-    if (p.role === 'DRIVER') {
+    if (p?.role === 'DRIVER') {
       const availRes = await api.get<ApiResponse<AvailableVehicle[]>>('/vehicles/marketplace/available-vehicles');
       setAvailableVehicles(Array.isArray(availRes.data) ? availRes.data : []);
       setAvailableDrivers([]);
-    } else if (p.role === 'PLATE_OWNER') {
+    } else if (p?.role === 'PLATE_OWNER') {
       const driversRes = await api.get<ApiResponse<AvailableDriver[]>>('/vehicles/marketplace/available-drivers');
       setAvailableDrivers(Array.isArray(driversRes.data) ? driversRes.data : []);
       setAvailableVehicles([]);

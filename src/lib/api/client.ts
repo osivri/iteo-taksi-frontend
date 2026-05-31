@@ -9,7 +9,7 @@ export interface ApiResponse<T> {
   data?: T;
   items?: T[];
   meta?: { page: number; limit: number; total: number };
-  message?: string;
+  message?: string | string[];
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -42,8 +42,8 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
         ? json.message
         : Array.isArray(json.message)
           ? json.message.join(', ')
-          : (json as ApiResponse<T>).message ?? 'İstek başarısız';
-    throw new Error(typeof message === 'string' ? message : 'İstek başarısız');
+          : 'İstek başarısız';
+    throw new Error(message);
   }
 
   return json as T;
