@@ -3,9 +3,14 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { fetchCurrentProfile, hasActiveSession } from '@/lib/member-profile';
-import { getLoginIntent, needsKvkkAcceptance, needsProfileSetup } from '@/lib/member';
+import {
+  getLoginIntent,
+  needsAddressSetup,
+  needsKvkkAcceptance,
+  needsProfileSetup,
+} from '@/lib/member';
 
-const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk'];
+const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk', '/panel/address'];
 
 export function PanelGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -60,7 +65,22 @@ export function PanelGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (!needsProfileSetup(profile) && !needsKvkkAcceptance(profile) && onSetupPath) {
+      if (
+        !needsProfileSetup(profile) &&
+        !needsKvkkAcceptance(profile) &&
+        needsAddressSetup(profile) &&
+        pathname !== '/panel/address'
+      ) {
+        if (!cancelled) router.replace('/panel/address');
+        return;
+      }
+
+      if (
+        !needsProfileSetup(profile) &&
+        !needsKvkkAcceptance(profile) &&
+        !needsAddressSetup(profile) &&
+        onSetupPath
+      ) {
         if (!cancelled) router.replace('/panel');
         return;
       }

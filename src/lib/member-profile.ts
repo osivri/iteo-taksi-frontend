@@ -30,6 +30,9 @@ export async function completeOnboarding(input: {
   firstName: string;
   lastName: string;
   role: MemberProfile['role'];
+  city: string;
+  district: string;
+  addressLine: string;
 }): Promise<void> {
   await api.post('/users/me/onboarding', input);
 }

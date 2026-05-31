@@ -13,6 +13,9 @@ export interface UserProfileData {
   phone: string | null;
   email: string | null;
   profileImageUrl: string | null;
+  city: string | null;
+  district: string | null;
+  addressLine: string | null;
   role: string;
   status: string;
 }
@@ -25,13 +28,16 @@ interface Props {
 
 export function ProfileEditor({
   title = 'Profilim',
-  description = 'Ad, soyad, telefon ve profil fotoğrafınızı güncelleyin.',
+  description = 'Ad, soyad, telefon, adres ve profil fotoğrafınızı güncelleyin.',
   onSaved,
 }: Props) {
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  const [addressLine, setAddressLine] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,6 +56,9 @@ export function ProfileEditor({
           setFirstName(p.firstName);
           setLastName(p.lastName);
           setPhone(p.phone ?? '');
+          setCity(p.city ?? '');
+          setDistrict(p.district ?? '');
+          setAddressLine(p.addressLine ?? '');
           setProfileImageUrl(p.profileImageUrl);
         }
       })
@@ -96,6 +105,9 @@ export function ProfileEditor({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone.trim() || undefined,
+        city: city.trim() || undefined,
+        district: district.trim() || undefined,
+        addressLine: addressLine.trim() || undefined,
         profileImageUrl: profileImageUrl ?? undefined,
       });
       const updated = res.data ?? null;
@@ -222,6 +234,43 @@ export function ProfileEditor({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="05XX XXX XX XX"
+            className="w-full rounded-lg border border-iteo-gray-200 px-4 py-2.5"
+          />
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block space-y-1">
+            <span className="text-sm font-medium text-iteo-gray-600">İl</span>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              placeholder="İstanbul"
+              className="w-full rounded-lg border border-iteo-gray-200 px-4 py-2.5"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-medium text-iteo-gray-600">İlçe</span>
+            <input
+              type="text"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              required
+              placeholder="Kadıköy"
+              className="w-full rounded-lg border border-iteo-gray-200 px-4 py-2.5"
+            />
+          </label>
+        </div>
+
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-iteo-gray-600">Açık Adres</span>
+          <textarea
+            value={addressLine}
+            onChange={(e) => setAddressLine(e.target.value)}
+            required
+            rows={3}
+            placeholder="Mahalle, sokak, bina no, daire"
             className="w-full rounded-lg border border-iteo-gray-200 px-4 py-2.5"
           />
         </label>

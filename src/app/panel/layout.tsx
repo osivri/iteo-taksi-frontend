@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { PanelGate } from '@/components/member/PanelGate';
 import { MemberShell } from '@/components/member/MemberShell';
 import { fetchCurrentProfile } from '@/lib/member-profile';
-import { needsKvkkAcceptance, needsProfileSetup, type MemberProfile, type MemberRole } from '@/lib/member';
+import { needsAddressSetup, needsKvkkAcceptance, needsProfileSetup, type MemberProfile, type MemberRole } from '@/lib/member';
 
-const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk'];
+const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk', '/panel/address'];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,7 +21,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <PanelGate>
-      {isSetupPath || !profile || needsProfileSetup(profile) || needsKvkkAcceptance(profile) ? (
+      {isSetupPath || !profile || needsProfileSetup(profile) || needsKvkkAcceptance(profile) || needsAddressSetup(profile) ? (
         children
       ) : (
         <MemberShell

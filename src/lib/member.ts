@@ -11,6 +11,9 @@ export interface MemberProfile {
   role: MemberRole | 'ADMIN' | 'SUPER_ADMIN';
   status: string;
   kvkkAcceptedAt: string | null;
+  city: string | null;
+  district: string | null;
+  addressLine: string | null;
 }
 
 const LOGIN_INTENT_KEY = 'iteo_login_intent';
@@ -120,6 +123,12 @@ export function needsProfileSetup(profile: Pick<MemberProfile, 'firstName' | 'la
 
 export function needsKvkkAcceptance(profile: Pick<MemberProfile, 'kvkkAcceptedAt'>): boolean {
   return !profile.kvkkAcceptedAt;
+}
+
+export function needsAddressSetup(
+  profile: Pick<MemberProfile, 'city' | 'district' | 'addressLine'>,
+): boolean {
+  return !profile.city?.trim() || !profile.district?.trim() || !profile.addressLine?.trim();
 }
 
 export function friendlyAuthError(message: string): string {
