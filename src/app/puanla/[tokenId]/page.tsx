@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useParams } from 'next/navigation';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+import { sanitizeApiError } from '@/lib/api/errors';
 
 export default function PublicRatingPage() {
   const params = useParams();
@@ -20,7 +19,7 @@ export default function PublicRatingPage() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/ratings/submit`, {
+      const response = await fetch('/api/public/ratings/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -30,15 +29,15 @@ export default function PublicRatingPage() {
         }),
       });
 
-      const json = await response.json();
+      const json = (await response.json()) as { message?: string | string[] };
       if (!response.ok) {
-        const message =
+        const raw =
           typeof json.message === 'string'
             ? json.message
             : Array.isArray(json.message)
               ? json.message.join(', ')
               : 'Puan gönderilemedi';
-        throw new Error(message);
+        throw new Error(sanitizeApiError(raw, 'Puan gönderilemedi'));
       }
 
       setSuccess(true);

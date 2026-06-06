@@ -1,22 +1,31 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import type { MemberProfile } from '@/lib/member';
-import { COOKIE_ACCESS } from '@/lib/auth/session';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+import { getServerApiUrl } from '@/lib/config';
+import { refreshAccessTokenOnServer } from '@/lib/auth/refresh.server';
+import { getAccessTokenFromCookies } from '@/lib/auth/session.server';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_ACCESS)?.value;
+  let token = await getAccessTokenFromCookies();
 
   if (!token) {
     return NextResponse.json({ error: 'Oturum bulunamadı' }, { status: 401 });
   }
 
-  const response = await fetch(`${API_URL}/users/me`, {
+  let response = await fetch(`${getServerApiUrl()}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
+
+  if (response.status === 401) {
+    token = await refreshAccessTokenOnServer();
+    if (!token) {
+      return NextResponse.json({ error: 'Oturum bulunamadı' }, { status: 401 });
+    }
+    response = await fetch(`${getServerApiUrl()}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+  }
 
   if (!response.ok) {
     return NextResponse.json({ error: 'Profil alınamadı' }, { status: response.status });

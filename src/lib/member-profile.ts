@@ -1,5 +1,5 @@
 import { api, ApiResponse } from '@/lib/api/client';
-import { getAccessToken, hasActiveSession } from '@/lib/auth/client';
+import { hasActiveSession } from '@/lib/auth/client';
 import type { MemberProfile } from '@/lib/member';
 
 async function fetchProfileFromServerRoute(): Promise<MemberProfile | null> {
@@ -10,8 +10,8 @@ async function fetchProfileFromServerRoute(): Promise<MemberProfile | null> {
 }
 
 export async function fetchCurrentProfile(): Promise<MemberProfile | null> {
-  const token = await getAccessToken();
-  if (!token) return null;
+  const sessionOk = await hasActiveSession();
+  if (!sessionOk) return null;
 
   const fromRoute = await fetchProfileFromServerRoute();
   if (fromRoute) return fromRoute;
@@ -29,7 +29,6 @@ export { hasActiveSession };
 export async function completeOnboarding(input: {
   firstName: string;
   lastName: string;
-  role: MemberProfile['role'];
   city: string;
   district: string;
   addressLine: string;

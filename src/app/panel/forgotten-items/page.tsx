@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { api, ApiResponse } from '@/lib/api/client';
 import { fetchCurrentProfile } from '@/lib/member-profile';
 import { ErrorBlock, LoadingBlock, PageHeader } from '@/components/admin/AdminUi';
+import { validateImageFile } from '@/lib/upload-limits';
 import type { MemberProfile } from '@/lib/member';
 
 interface Vehicle {
@@ -74,18 +75,34 @@ export default function PanelForgottenItemsPage() {
       .finally(() => setLoading(false));
   }, [load]);
 
+  useEffect(() => {
+    return () => {
+      if (photoPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
+
   async function uploadPhoto(file: File) {
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setUploading(true);
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('bucket', 'forgotten-items');
       formData.append('file', file);
-      const upload = await api.upload<ApiResponse<UploadResult>>('/storage/upload', formData);
+      const upload = await api.upload<ApiResponse<UploadResult>>('/storage/forgotten-items', formData);
       const path = upload.data?.path;
       if (!path) throw new Error('Fotoğraf yüklenemedi');
       setPhotoPath(path);
-      setPhotoPreview(URL.createObjectURL(file));
+      setPhotoPreview((prev) => {
+        if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
     } catch (err) {
       setError((err as Error).message);
       setPhotoPath(null);
@@ -112,7 +129,10 @@ export default function PanelForgottenItemsPage() {
       });
       setDescription('');
       setPhotoPath(null);
-      setPhotoPreview(null);
+      setPhotoPreview((prev) => {
+        if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+        return null;
+      });
       if (fileInputRef.current) fileInputRef.current.value = '';
       await load();
     } catch (err) {

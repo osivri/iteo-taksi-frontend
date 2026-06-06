@@ -1,8 +1,6 @@
 'use client';
 
-import { getAccessToken, refreshAccessToken } from '@/lib/auth/client';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+import { parseBackendMessage, sanitizeApiError } from '@/lib/api/errors';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -12,41 +10,74 @@ export interface ApiResponse<T> {
   message?: string | string[];
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let token = await getAccessToken();
-  if (!token) throw new Error('Oturum bulunamadı');
+function backendUrl(path: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `/api/backend${normalized}`;
+}
 
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
     ...(options.headers as Record<string, string>),
   };
 
-  if (!(options.body instanceof FormData)) {
+  if (!(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
-  let response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let response = await fetch(backendUrl(path), {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
 
   if (response.status === 401) {
-    token = await refreshAccessToken();
-    if (!token) throw new Error('Oturum bulunamadı');
-    headers.Authorization = `Bearer ${token}`;
-    response = await fetch(`${API_URL}${path}`, { ...options, headers });
+    const refreshed = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!refreshed.ok) throw new Error('Oturum bulunamadı');
+    response = await fetch(backendUrl(path), {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    if (!response.ok) {
+      throw new Error(sanitizeApiError('', 'İstek başarısız'));
+    }
+    return response as unknown as T;
   }
 
   const json = (await response.json()) as ApiResponse<T> & T;
 
   if (!response.ok) {
-    const message =
-      typeof json.message === 'string'
-        ? json.message
-        : Array.isArray(json.message)
-          ? json.message.join(', ')
-          : 'İstek başarısız';
-    throw new Error(message);
+    const raw = parseBackendMessage(json, 'İstek başarısız');
+    throw new Error(sanitizeApiError(raw, 'İstek başarısız'));
   }
 
   return json as T;
+}
+
+export async function apiDownload(path: string): Promise<Blob> {
+  let response = await fetch(backendUrl(path), { credentials: 'include' });
+
+  if (response.status === 401) {
+    const refreshed = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!refreshed.ok) throw new Error('Oturum bulunamadı');
+    response = await fetch(backendUrl(path), { credentials: 'include' });
+  }
+
+  if (!response.ok) {
+    throw new Error('İndirme başarısız');
+  }
+
+  return response.blob();
 }
 
 export const api = {
@@ -60,4 +91,4 @@ export const api = {
     apiFetch<T>(path, { method: 'POST', body: formData }),
 };
 
-export { getAccessToken };
+export { hasActiveSession } from '@/lib/auth/client';

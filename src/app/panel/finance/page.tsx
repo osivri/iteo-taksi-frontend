@@ -18,6 +18,7 @@ import {
   type FinancePeriodSelection,
   type FinanceTypeFilter,
 } from '@/lib/finance-period';
+import { validateReceiptFile } from '@/lib/upload-limits';
 
 interface Vehicle {
   id: string;
@@ -156,9 +157,8 @@ export default function PanelFinancePage() {
 
   async function uploadReceiptFile(file: File): Promise<string> {
     const formData = new FormData();
-    formData.append('bucket', 'receipts');
     formData.append('file', file);
-    const upload = await api.upload<ApiResponse<{ url: string }>>('/storage/upload', formData);
+    const upload = await api.upload<ApiResponse<{ url: string }>>('/storage/receipts', formData);
     const url = upload.data?.url;
     if (!url) throw new Error('Fiş dosyası yüklenemedi');
     return url;
@@ -214,8 +214,9 @@ export default function PanelFinancePage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      setError('Sadece JPG, PNG veya PDF yükleyebilirsiniz.');
+    const validationError = validateReceiptFile(file);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     handleReceiptFile(file, scanModeRef.current, attachRecordIdRef.current ?? undefined);

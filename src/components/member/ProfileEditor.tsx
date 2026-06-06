@@ -82,9 +82,8 @@ export function ProfileEditor({
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('bucket', 'profile-images');
       formData.append('file', file);
-      const upload = await api.upload<ApiResponse<{ url: string }>>('/storage/upload', formData);
+      const upload = await api.upload<ApiResponse<{ url: string }>>('/storage/profile-images', formData);
       const url = upload.data?.url;
       if (!url) throw new Error('Fotoğraf yüklenemedi');
       setProfileImageUrl(url);

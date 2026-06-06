@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (isDashboard && isAuthenticated && role && !ADMIN_ROLES.includes(role)) {
+  if (isDashboard && isAuthenticated && (!role || !ADMIN_ROLES.includes(role))) {
     return NextResponse.redirect(new URL('/panel', request.url));
   }
 

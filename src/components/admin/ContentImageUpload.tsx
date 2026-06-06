@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { api, ApiResponse } from '@/lib/api/client';
+import { validateImageFile } from '@/lib/upload-limits';
 
 interface Props {
   value: string | null;
@@ -22,12 +23,9 @@ export function ContentImageUpload({
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) {
-      setError('JPG veya PNG yükleyin.');
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      setError('Görsel en fazla 3 MB olabilir.');
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -35,9 +33,8 @@ export function ContentImageUpload({
     setError(null);
     try {
       const formData = new FormData();
-      formData.append('bucket', 'content-images');
       formData.append('file', file);
-      const res = await api.upload<ApiResponse<{ url: string }>>('/storage/upload', formData);
+      const res = await api.upload<ApiResponse<{ url: string }>>('/storage/content-images', formData);
       const url = res.data?.url;
       if (!url) throw new Error('Görsel yüklenemedi');
       onChange(url);

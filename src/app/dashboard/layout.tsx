@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AdminHeaderActions } from "@/components/admin/AdminHeaderActions";
+import { requireAdminSession } from "@/lib/auth/require-admin";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -24,11 +25,13 @@ const navItems = [
   { href: "/dashboard/audit-logs", label: "İşlem Logları", icon: "📝" },
 ];
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireAdminSession();
+
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 flex-shrink-0 flex-col bg-iteo-black text-white md:flex">

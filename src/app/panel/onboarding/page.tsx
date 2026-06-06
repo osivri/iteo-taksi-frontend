@@ -75,7 +75,6 @@ export default function PanelOnboardingPage() {
       await completeOnboarding({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        role,
         city: city.trim(),
         district: district.trim(),
         addressLine: addressLine.trim(),

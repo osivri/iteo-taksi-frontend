@@ -1,35 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PanelGate } from '@/components/member/PanelGate';
 import { MemberShell } from '@/components/member/MemberShell';
-import { fetchCurrentProfile } from '@/lib/member-profile';
-import { needsAddressSetup, needsKvkkAcceptance, needsProfileSetup, type MemberProfile, type MemberRole } from '@/lib/member';
+import { useMemberProfileContext } from '@/components/member/MemberProfileContext';
+import { needsAddressSetup, needsKvkkAcceptance, needsProfileSetup, type MemberRole } from '@/lib/member';
 
 const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk', '/panel/address'];
 
-export default function PanelLayout({ children }: { children: React.ReactNode }) {
+function PanelLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [profile, setProfile] = useState<MemberProfile | null>(null);
-
-  useEffect(() => {
-    fetchCurrentProfile().then(setProfile);
-  }, [pathname]);
-
+  const profile = useMemberProfileContext();
   const isSetupPath = SETUP_PATHS.some((p) => pathname.startsWith(p));
 
+  if (
+    isSetupPath ||
+    !profile ||
+    needsProfileSetup(profile) ||
+    needsKvkkAcceptance(profile) ||
+    needsAddressSetup(profile)
+  ) {
+    return children;
+  }
+
+  return (
+    <MemberShell
+      role={profile.role as MemberRole}
+      userName={`${profile.firstName} ${profile.lastName}`}>
+      {children}
+    </MemberShell>
+  );
+}
+
+export default function PanelLayout({ children }: { children: React.ReactNode }) {
   return (
     <PanelGate>
-      {isSetupPath || !profile || needsProfileSetup(profile) || needsKvkkAcceptance(profile) || needsAddressSetup(profile) ? (
-        children
-      ) : (
-        <MemberShell
-          role={profile.role as MemberRole}
-          userName={`${profile.firstName} ${profile.lastName}`}>
-          {children}
-        </MemberShell>
-      )}
+      <PanelLayoutContent>{children}</PanelLayoutContent>
     </PanelGate>
   );
 }

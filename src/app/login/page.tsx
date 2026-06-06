@@ -5,20 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginAdmin } from '@/lib/auth/client';
-
-function friendlyAuthError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes('invalid login') || m.includes('invalid credentials')) {
-    return 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.';
-  }
-  if (m.includes('email not confirmed')) {
-    return 'E-posta adresiniz henüz doğrulanmamış.';
-  }
-  if (m.includes('admin yetkisi')) {
-    return 'Admin yetkisi gerekli';
-  }
-  return message || 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
-}
+import { friendlyAuthError } from '@/lib/member';
 
 export default function LoginPage() {
   const router = useRouter();

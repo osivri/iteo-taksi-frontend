@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiResponse, getAccessToken } from '@/lib/api/client';
+import { api, apiDownload, ApiResponse } from '@/lib/api/client';
 import { ErrorBlock, LoadingBlock, PageHeader, StatCard } from '@/components/admin/AdminUi';
 
 interface FinanceRow {
@@ -37,8 +37,6 @@ interface FinanceAnalytics {
 }
 
 type Period = 'all' | 'month' | 'week';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
 function periodRange(period: Period): { from?: string; to?: string } {
   if (period === 'all') return {};
@@ -126,15 +124,8 @@ export default function FinanceAdminPage() {
       if (typeFilter !== 'all') params.set('type', typeFilter);
       if (vehicleFilter) params.set('vehicleId', vehicleFilter);
 
-      const token = await getAccessToken();
-      if (!token) throw new Error('Oturum bulunamadı');
-
-      const response = await fetch(`${API_URL}/admin/finance/export?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Dışa aktarma başarısız');
-
-      const blob = await response.blob();
+      const qs = params.toString();
+      const blob = await apiDownload(`/admin/finance/export${qs ? `?${qs}` : ''}`);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
