@@ -81,6 +81,8 @@ export const memberNavItems: MemberNavItem[] = [
   { href: '/panel/payments', label: 'Ödemeler', icon: '💳', roles: ['PLATE_OWNER', 'USER'] },
   { href: '/panel/appointments', label: 'Randevu', icon: '📅', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
   { href: '/panel/forgotten-items', label: 'Unutulan Eşya', icon: '🧳', roles: ['DRIVER', 'PLATE_OWNER'] },
+  { href: '/panel/services', label: 'Oda Hizmetleri', icon: '🛎️', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
+  { href: '/panel/listings', label: 'İlanlar', icon: '📌', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
   { href: '/panel/ohs', label: 'İSG', icon: '🦺', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
   { href: '/panel/help', label: 'Yardım', icon: '❓', roles: ['DRIVER', 'PLATE_OWNER', 'USER'] },
 ];
