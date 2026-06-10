@@ -1,4 +1,5 @@
 import type { AvailableDriver, AvailableVehicle } from '@/components/member/vehicles/vehicles-shared';
+import { filterMarketplaceByLocation } from './marketplace-location';
 
 export const marketplaceSteps = {
   findDriver: [
@@ -13,26 +14,40 @@ export const marketplaceSteps = {
   ],
 } as const;
 
-export function filterDrivers(drivers: AvailableDriver[], query: string): AvailableDriver[] {
+export function filterDrivers(
+  drivers: AvailableDriver[],
+  query: string,
+  district = '',
+  neighborhood = '',
+): AvailableDriver[] {
+  let list = filterMarketplaceByLocation(drivers, district, neighborhood);
   const q = query.trim().toLowerCase();
-  if (!q) return drivers;
-  return drivers.filter(
+  if (!q) return list;
+  return list.filter(
     (d) =>
       d.fullName.toLowerCase().includes(q) ||
       (d.memberNo?.toLowerCase().includes(q) ?? false) ||
-      (d.phone?.toLowerCase().includes(q) ?? false),
+      (d.phone?.toLowerCase().includes(q) ?? false) ||
+      (d.district?.toLowerCase().includes(q) ?? false),
   );
 }
 
-export function filterVehicles(vehicles: AvailableVehicle[], query: string): AvailableVehicle[] {
+export function filterVehicles(
+  vehicles: AvailableVehicle[],
+  query: string,
+  district = '',
+  neighborhood = '',
+): AvailableVehicle[] {
+  let list = filterMarketplaceByLocation(vehicles, district, neighborhood);
   const q = query.trim().toLowerCase();
-  if (!q) return vehicles;
-  return vehicles.filter(
+  if (!q) return list;
+  return list.filter(
     (v) =>
       v.plateNumber.toLowerCase().includes(q) ||
       (v.brand?.toLowerCase().includes(q) ?? false) ||
       (v.model?.toLowerCase().includes(q) ?? false) ||
-      v.ownerName.toLowerCase().includes(q),
+      v.ownerName.toLowerCase().includes(q) ||
+      (v.district?.toLowerCase().includes(q) ?? false),
   );
 }
 

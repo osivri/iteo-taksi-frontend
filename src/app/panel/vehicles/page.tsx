@@ -22,6 +22,10 @@ export default function PanelVehiclesPage() {
   const [plateNumber, setPlateNumber] = useState('');
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [inspectionExpiry, setInspectionExpiry] = useState('');
+  const [insuranceExpiry, setInsuranceExpiry] = useState('');
+  const [licenseExpiry, setLicenseExpiry] = useState('');
 
   const role = profile?.role as MemberRole | undefined;
   const isDriver = role === 'DRIVER';
@@ -51,14 +55,23 @@ export default function PanelVehiclesPage() {
     setSaving(true);
     setError(null);
     try {
+      const parsedYear = year.trim() ? Number.parseInt(year.trim(), 10) : undefined;
       await api.post('/vehicles', {
         plateNumber: plateNumber.trim().toUpperCase(),
         brand: brand.trim() || undefined,
         model: model.trim() || undefined,
+        year: parsedYear && !Number.isNaN(parsedYear) ? parsedYear : undefined,
+        inspectionExpiry: inspectionExpiry || undefined,
+        insuranceExpiry: insuranceExpiry || undefined,
+        licenseExpiry: licenseExpiry || undefined,
       });
       setPlateNumber('');
       setBrand('');
       setModel('');
+      setYear('');
+      setInspectionExpiry('');
+      setInsuranceExpiry('');
+      setLicenseExpiry('');
       await load();
     } catch (err) {
       setError((err as Error).message);
@@ -118,11 +131,19 @@ export default function PanelVehiclesPage() {
           plateNumber={plateNumber}
           brand={brand}
           model={model}
+          year={year}
+          inspectionExpiry={inspectionExpiry}
+          insuranceExpiry={insuranceExpiry}
+          licenseExpiry={licenseExpiry}
           saving={saving}
           actionId={actionId}
           onPlateNumberChange={setPlateNumber}
           onBrandChange={setBrand}
           onModelChange={setModel}
+          onYearChange={setYear}
+          onInspectionExpiryChange={setInspectionExpiry}
+          onInsuranceExpiryChange={setInsuranceExpiry}
+          onLicenseExpiryChange={setLicenseExpiry}
           onSubmit={handleOwnerSubmit}
           onRemove={removeVehicle}
         />

@@ -27,6 +27,9 @@ export interface AvailableVehicle {
   model: string | null;
   ownerName: string;
   hasPendingRequest: boolean;
+  district: string | null;
+  city: string | null;
+  addressLine: string | null;
 }
 
 export interface AvailableDriver {
@@ -34,6 +37,9 @@ export interface AvailableDriver {
   fullName: string;
   memberNo: string | null;
   phone: string | null;
+  district: string | null;
+  city: string | null;
+  addressLine: string | null;
 }
 
 export const requestStatusLabels: Record<string, string> = {
@@ -64,3 +70,8 @@ export const inputClass =
   'w-full rounded-xl border border-iteo-gray-200 px-4 py-2.5 text-sm text-iteo-black placeholder:text-iteo-gray-400 focus:border-iteo-yellow focus:outline-none focus:ring-2 focus:ring-iteo-yellow/30';
 
 export const labelClass = 'text-xs font-semibold uppercase tracking-wide text-iteo-gray-500';
+
+export function formatVehicleSummary(vehicle: Pick<Vehicle, 'brand' | 'model' | 'year'>): string {
+  const parts = [vehicle.brand, vehicle.model, vehicle.year ? String(vehicle.year) : null].filter(Boolean);
+  return parts.join(' ') || 'Marka / model belirtilmedi';
+}

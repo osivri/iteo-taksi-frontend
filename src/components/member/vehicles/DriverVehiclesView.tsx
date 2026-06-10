@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { EmptyState, SectionCard } from '@/components/admin/AdminUi';
 import { IteoIcon } from '@/components/ui/icons';
 import type { Vehicle } from './vehicles-shared';
-import { vehicleStatusLabels } from './vehicles-shared';
+import { formatVehicleSummary, vehicleStatusLabels } from './vehicles-shared';
 
 interface Props {
   vehicles: Vehicle[];
@@ -62,10 +62,8 @@ export function DriverVehiclesView({ vehicles }: Props) {
                 <p className="mt-1 text-sm text-iteo-success">
                   Onaylı · {vehicleStatusLabels[v.status] ?? v.status}
                 </p>
-                {(v.brand || v.model) && (
-                  <p className="mt-1 text-xs text-iteo-gray-500">
-                    {[v.brand, v.model].filter(Boolean).join(' ')}
-                  </p>
+                {(v.brand || v.model || v.year) && (
+                  <p className="mt-1 text-xs text-iteo-gray-500">{formatVehicleSummary(v)}</p>
                 )}
               </li>
             ))}

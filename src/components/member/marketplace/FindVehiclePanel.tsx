@@ -4,20 +4,25 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api, ApiResponse } from '@/lib/api/client';
 import { parseApiItems } from '@/lib/parse-api-list';
-import { ErrorBlock, LoadingBlock, SectionCard, StatCard } from '@/components/admin/AdminUi';
+import { ErrorBlock, LoadingBlock } from '@/components/admin/AdminUi';
 import { ModulePageHero } from '@/components/member/ModulePageHero';
 import { StatusBadge } from '@/components/ui/DesignSystem';
 import { IteoIcon } from '@/components/ui/icons';
 import type { AvailableVehicle, PlateRequest, Vehicle } from '@/components/member/vehicles/vehicles-shared';
 import { labelClass, requestStatusLabels, requestStatusTone, inputClass as vehicleInputClass } from '@/components/member/vehicles/vehicles-shared';
-import { MarketplaceSteps } from './MarketplaceSteps';
-import { filterVehicles, inputClass, marketplaceSteps } from './marketplace-shared';
+import { MarketplaceBrowseShell } from './MarketplaceBrowseShell';
+import { MarketplaceFilterBar } from './MarketplaceFilterBar';
+import { MarketplacePendingBanner } from './MarketplacePendingBanner';
+import { formatItemLocationShort } from './marketplace-location';
+import { filterVehicles, inputClass } from './marketplace-shared';
 
 export function FindVehiclePanel() {
   const [available, setAvailable] = useState<AvailableVehicle[]>([]);
   const [myVehicles, setMyVehicles] = useState<Vehicle[]>([]);
   const [requests, setRequests] = useState<PlateRequest[]>([]);
   const [search, setSearch] = useState('');
+  const [district, setDistrict] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +52,15 @@ export function FindVehiclePanel() {
     [requests],
   );
 
-  const filtered = useMemo(() => filterVehicles(available, search), [available, search]);
+  const filtered = useMemo(
+    () => filterVehicles(available, search, district, neighborhood),
+    [available, search, district, neighborhood],
+  );
+
+  const resetLocation = () => {
+    setDistrict('');
+    setNeighborhood('');
+  };
 
   async function applyToVehicle(vehicleId: string) {
     setActionId(vehicleId);
@@ -113,129 +126,115 @@ export function FindVehiclePanel() {
   if (loading) return <LoadingBlock />;
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-4 pb-10">
       <ModulePageHero
         badge="Eşleştirme Pazarı"
         title="Araç Bul"
-        description="Şoför arayan kayıtlı plakaları keşfedin, başvurun veya oda üyesi davetlerini yönetin."
+        description="İlçe ve mahalle seçerek boş araçları listeleyin, başvurun veya davetleri yönetin."
       />
 
       {error && <ErrorBlock message={error} />}
 
-      <MarketplaceSteps steps={marketplaceSteps.findVehicle} />
+      <MarketplacePendingBanner
+        title="Gelen plaka davetleri"
+        items={pendingInvites.map((r) => ({
+          id: r.id,
+          title: r.plateNumber,
+          subtitle: `${r.ownerName ?? 'Oda üyesi'} · Davet`,
+        }))}
+        onApprove={approveInvite}
+        onReject={rejectInvite}
+        actionId={actionId}
+        approveLabel="Kabul Et"
+      />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Boşta araç" value={available.length} hint="Başvurulabilir plakalar" />
-        <StatCard
-          label="Gelen davet"
-          value={pendingInvites.length}
-          hint="Oda üyesi davetleri"
-          tone={pendingInvites.length > 0 ? 'warning' : 'default'}
-        />
-        <StatCard label="Onaylı plaka" value={myVehicles.length} hint="Çalışma yetkiniz olan plakalar" tone="success" />
-      </div>
-
-      {pendingInvites.length > 0 && (
-        <SectionCard
-          title="Gelen plaka davetleri"
-          description="Kabul ettiğinizde bu plakada çalışmaya başlarsınız"
-          className="border-iteo-yellow/30 bg-gradient-to-br from-iteo-yellow/10 to-white"
-        >
-          <ul className="space-y-3">
-            {pendingInvites.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-iteo-gray-200 bg-white p-4"
-              >
-                <div>
-                  <p className="font-bold text-iteo-black">{r.plateNumber}</p>
-                  <p className="text-sm text-iteo-gray-500">{r.ownerName ?? 'Oda üyesi'} · Davet</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => approveInvite(r.id)}
-                    disabled={actionId === r.id}
-                    className="rounded-xl bg-iteo-success px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  >
-                    Kabul Et
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => rejectInvite(r.id)}
-                    disabled={actionId === r.id}
-                    className="rounded-xl border border-iteo-danger/30 px-4 py-2 text-sm font-semibold text-iteo-danger disabled:opacity-60"
-                  >
-                    Reddet
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      )}
-
-      <SectionCard
-        title="Kayıtlı boş araçlar"
-        description="Sistemde kayıtlı ve şoför bekleyen plakalar"
-        action={
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Plaka, marka, oda üyesi..."
-            className={`${inputClass} w-48 sm:w-64`}
+      <MarketplaceBrowseShell
+        items={available}
+        district={district}
+        neighborhood={neighborhood}
+        onDistrictChange={setDistrict}
+        onNeighborhoodChange={setNeighborhood}
+        onResetLocation={resetLocation}
+        entityLabel="araç"
+        filterBar={
+          <MarketplaceFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Plaka, marka, oda üyesi veya ilçe ara..."
+            district={district}
+            neighborhood={neighborhood}
+            onResetLocation={resetLocation}
+            resultCount={filtered.length}
+            resultLabel="araç"
+            stats={[
+              { label: 'boş araç', value: available.length },
+              {
+                label: 'davet',
+                value: pendingInvites.length,
+                highlight: pendingInvites.length > 0,
+              },
+              { label: 'onaylı plaka', value: myVehicles.length },
+            ]}
           />
         }
       >
         {filtered.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-iteo-gray-200 bg-iteo-gray-50 px-4 py-10 text-center text-sm text-iteo-gray-500">
+          <p className="rounded-xl border border-dashed border-iteo-gray-200 bg-iteo-gray-50 px-4 py-12 text-center text-sm text-iteo-gray-500">
             {available.length === 0
-              ? 'Şu an başvurabileceğiniz boş araç yok. Listeyi daha sonra tekrar kontrol edin.'
-              : 'Arama kriterinize uygun araç bulunamadı.'}
+              ? 'Şu an başvurulabileceğiniz boş araç yok. Listeyi daha sonra tekrar kontrol edin.'
+              : 'Seçili konum veya arama kriterinize uygun araç bulunamadı.'}
           </p>
         ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((v) => (
-              <li
-                key={v.id}
-                className="flex flex-col justify-between gap-4 rounded-2xl border border-iteo-gray-200 bg-white p-4 shadow-sm transition hover:border-iteo-yellow/50 hover:shadow-md"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-iteo-yellow/20">
-                      <IteoIcon name="taxi" size={20} className="text-iteo-black" />
+          <ul className="divide-y divide-iteo-gray-100 rounded-xl border border-iteo-gray-200">
+            {filtered.map((v) => {
+              const location = formatItemLocationShort(v);
+              return (
+                <li
+                  key={v.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 transition hover:bg-iteo-gray-50/80"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-iteo-yellow/25">
+                      <IteoIcon name="taxi" size={18} className="text-iteo-black" />
                     </div>
-                    <p className="text-lg font-black tracking-wide text-iteo-black">{v.plateNumber}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-black tracking-wide text-iteo-black">{v.plateNumber}</p>
+                      <p className="text-xs text-iteo-gray-500">
+                        {[v.brand, v.model].filter(Boolean).join(' ') || 'Araç bilgisi yok'} · {v.ownerName}
+                      </p>
+                      {location ? (
+                        <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-iteo-gray-600">
+                          <IteoIcon name="pin" size={11} />
+                          {location}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                  <p className="mt-3 text-sm text-iteo-gray-600">
-                    {[v.brand, v.model].filter(Boolean).join(' ') || 'Araç bilgisi belirtilmemiş'}
-                  </p>
-                  <p className="mt-1 text-xs text-iteo-gray-500">Oda üyesi: {v.ownerName}</p>
-                </div>
-                {v.hasPendingRequest ? (
-                  <StatusBadge label="Başvuruldu" tone="warning" />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => applyToVehicle(v.id)}
-                    disabled={actionId === v.id}
-                    className="w-full rounded-xl bg-iteo-yellow py-2.5 text-sm font-bold text-iteo-black disabled:opacity-60"
-                  >
-                    {actionId === v.id ? 'Gönderiliyor...' : 'Başvur'}
-                  </button>
-                )}
-              </li>
-            ))}
+                  {v.hasPendingRequest ? (
+                    <StatusBadge label="Başvuruldu" tone="warning" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => applyToVehicle(v.id)}
+                      disabled={actionId === v.id}
+                      className="shrink-0 rounded-lg bg-iteo-yellow px-4 py-2 text-sm font-bold text-iteo-black disabled:opacity-60"
+                    >
+                      {actionId === v.id ? 'Gönderiliyor...' : 'Başvur'}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
-      </SectionCard>
+      </MarketplaceBrowseShell>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard
-          title="Plaka numarasıyla başvuru"
-          description="Listede yoksa kayıtlı plakaya doğrudan talep gönderin (opsiyonel)"
-        >
-          <form onSubmit={handlePlateSubmit} className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <details className="rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-iteo-black marker:content-none sm:px-5">
+            Plaka numarasıyla başvuru (opsiyonel)
+          </summary>
+          <form onSubmit={handlePlateSubmit} className="space-y-4 border-t border-iteo-gray-100 px-4 py-4 sm:px-5">
             <label className="block space-y-1.5">
               <span className={labelClass}>Plaka</span>
               <input
@@ -243,7 +242,7 @@ export function FindVehiclePanel() {
                 onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
                 placeholder="34 ABC 123"
                 required
-                className={`${vehicleInputClass} uppercase font-semibold tracking-wide`}
+                className={`${vehicleInputClass} font-semibold uppercase tracking-wide`}
               />
             </label>
             <button
@@ -254,33 +253,41 @@ export function FindVehiclePanel() {
               {saving ? 'Gönderiliyor...' : 'Onay Talebi Gönder'}
             </button>
           </form>
-        </SectionCard>
+        </details>
 
-        <SectionCard title="Taleplerim" description="Başvuru ve davet geçmişiniz">
-          {requests.length === 0 ? (
-            <p className="text-sm text-iteo-gray-500">Henüz eşleştirme talebiniz yok.</p>
-          ) : (
-            <ul className="max-h-64 space-y-2 overflow-y-auto">
-              {requests.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-iteo-gray-100 px-3 py-2"
-                >
-                  <div>
-                    <p className="font-semibold text-iteo-black">{r.plateNumber}</p>
-                    <p className="text-xs text-iteo-gray-500">
-                      {(r.initiatedBy ?? 'DRIVER') === 'OWNER' ? 'Davet' : 'Başvuru'}
-                    </p>
-                  </div>
-                  <StatusBadge label={requestStatusLabels[r.status] ?? r.status} tone={requestStatusTone(r.status)} />
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link href="/panel/vehicles" className="mt-4 inline-block text-sm font-semibold text-iteo-yellow hover:underline">
-            Çalışma plakalarım →
-          </Link>
-        </SectionCard>
+        <details className="rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-iteo-black marker:content-none sm:px-5">
+            Taleplerim ({requests.length})
+          </summary>
+          <div className="border-t border-iteo-gray-100 px-4 py-4 sm:px-5">
+            {requests.length === 0 ? (
+              <p className="text-sm text-iteo-gray-500">Henüz eşleştirme talebiniz yok.</p>
+            ) : (
+              <ul className="max-h-56 space-y-2 overflow-y-auto">
+                {requests.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-iteo-gray-100 px-3 py-2"
+                  >
+                    <div>
+                      <p className="font-semibold text-iteo-black">{r.plateNumber}</p>
+                      <p className="text-xs text-iteo-gray-500">
+                        {(r.initiatedBy ?? 'DRIVER') === 'OWNER' ? 'Davet' : 'Başvuru'}
+                      </p>
+                    </div>
+                    <StatusBadge label={requestStatusLabels[r.status] ?? r.status} tone={requestStatusTone(r.status)} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link
+              href="/panel/vehicles"
+              className="mt-4 inline-block text-sm font-semibold text-iteo-yellow hover:underline"
+            >
+              Çalışma plakalarım →
+            </Link>
+          </div>
+        </details>
       </div>
     </div>
   );

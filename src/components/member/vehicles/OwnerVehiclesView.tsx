@@ -6,18 +6,26 @@ import { EmptyState, SectionCard } from '@/components/admin/AdminUi';
 import { IteoIcon } from '@/components/ui/icons';
 import { StatusBadge } from '@/components/ui/DesignSystem';
 import type { Vehicle } from './vehicles-shared';
-import { inputClass, labelClass, vehicleStatusLabels, vehicleStatusTone } from './vehicles-shared';
+import { formatVehicleSummary, inputClass, labelClass, vehicleStatusLabels, vehicleStatusTone } from './vehicles-shared';
 
 interface Props {
   vehicles: Vehicle[];
   plateNumber: string;
   brand: string;
   model: string;
+  year: string;
+  inspectionExpiry: string;
+  insuranceExpiry: string;
+  licenseExpiry: string;
   saving: boolean;
   actionId: string | null;
   onPlateNumberChange: (value: string) => void;
   onBrandChange: (value: string) => void;
   onModelChange: (value: string) => void;
+  onYearChange: (value: string) => void;
+  onInspectionExpiryChange: (value: string) => void;
+  onInsuranceExpiryChange: (value: string) => void;
+  onLicenseExpiryChange: (value: string) => void;
   onSubmit: (e: FormEvent) => void;
   onRemove: (id: string) => void;
 }
@@ -27,11 +35,19 @@ export function OwnerVehiclesView({
   plateNumber,
   brand,
   model,
+  year,
+  inspectionExpiry,
+  insuranceExpiry,
+  licenseExpiry,
   saving,
   actionId,
   onPlateNumberChange,
   onBrandChange,
   onModelChange,
+  onYearChange,
+  onInspectionExpiryChange,
+  onInsuranceExpiryChange,
+  onLicenseExpiryChange,
   onSubmit,
   onRemove,
 }: Props) {
@@ -84,7 +100,7 @@ export function OwnerVehiclesView({
                     <span className={labelClass}>Marka</span>
                     <input
                       type="text"
-                      placeholder="Opsiyonel"
+                      placeholder="Fiat, Toyota..."
                       value={brand}
                       onChange={(e) => onBrandChange(e.target.value)}
                       className={inputClass}
@@ -94,9 +110,50 @@ export function OwnerVehiclesView({
                     <span className={labelClass}>Model</span>
                     <input
                       type="text"
-                      placeholder="Opsiyonel"
+                      placeholder="Egea, Corolla..."
                       value={model}
                       onChange={(e) => onModelChange(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>Model yılı</span>
+                    <input
+                      type="number"
+                      min={1980}
+                      max={new Date().getFullYear() + 1}
+                      placeholder="2020"
+                      value={year}
+                      onChange={(e) => onYearChange(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>Muayene bitiş</span>
+                    <input
+                      type="date"
+                      value={inspectionExpiry}
+                      onChange={(e) => onInspectionExpiryChange(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>Sigorta bitiş</span>
+                    <input
+                      type="date"
+                      value={insuranceExpiry}
+                      onChange={(e) => onInsuranceExpiryChange(e.target.value)}
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block space-y-1.5">
+                    <span className={labelClass}>Ruhsat bitiş</span>
+                    <input
+                      type="date"
+                      value={licenseExpiry}
+                      onChange={(e) => onLicenseExpiryChange(e.target.value)}
                       className={inputClass}
                     />
                   </label>
@@ -144,9 +201,7 @@ export function OwnerVehiclesView({
                       </div>
                       <div>
                         <p className="text-lg font-bold tracking-wide text-iteo-black">{v.plateNumber}</p>
-                        <p className="text-sm text-iteo-gray-500">
-                          {[v.brand, v.model].filter(Boolean).join(' ') || 'Marka / model belirtilmedi'}
-                        </p>
+                        <p className="text-sm text-iteo-gray-500">{formatVehicleSummary(v)}</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <StatusBadge
                             label={vehicleStatusLabels[v.status] ?? v.status}
