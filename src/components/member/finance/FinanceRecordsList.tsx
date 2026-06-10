@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { EmptyState } from '@/components/admin/AdminUi';
+import { IteoIcon } from '@/components/ui/icons';
 import type { FinanceTypeFilter } from '@/lib/finance-period';
 import { FinanceTypeFilter as FinanceTypeFilterTabs } from '@/components/member/FinancePeriodTabs';
 
@@ -47,15 +49,15 @@ export function FinanceRecordsList({
 
   return (
     <>
-    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-iteo-gray-100 px-4 py-4 sm:px-5">
+    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-iteo-gray-100 px-4 py-5 sm:px-5">
         <div className="flex items-start gap-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-iteo-gray-200 text-sm font-bold text-iteo-black">
-            3
-          </span>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-iteo-gray-100">
+            <IteoIcon name="receipt" size={20} className="text-iteo-black/70" />
+          </div>
           <div>
-            <h2 className="text-sm font-bold text-iteo-black">Kayıtlar</h2>
-            <p className="mt-0.5 text-xs text-iteo-gray-500">{periodLabel}</p>
+            <h2 className="text-base font-bold text-iteo-black">Hareketler</h2>
+            <p className="mt-0.5 text-sm text-iteo-gray-500">{periodLabel}</p>
           </div>
         </div>
         <FinanceTypeFilterTabs value={typeFilter} onChange={onTypeFilterChange} />
@@ -69,15 +71,11 @@ export function FinanceRecordsList({
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-iteo-gray-200 bg-iteo-gray-50 px-6 py-12 text-center">
-            <p className="text-3xl" aria-hidden>
-              📋
-            </p>
-            <p className="mt-3 text-sm font-semibold text-iteo-black">Bu dönemde kayıt yok</p>
-            <p className="mt-1 text-xs text-iteo-gray-500">
-              Yukarıdan yeni bir gelir veya gider ekleyerek başlayın.
-            </p>
-          </div>
+          <EmptyState
+            icon="finance"
+            title="Bu dönemde kayıt yok"
+            description="Soldan gelir/gider ekleyin veya fiş tarayarak başlayın."
+          />
         ) : (
           <ul className="space-y-2">
             {rows.map((r) => {

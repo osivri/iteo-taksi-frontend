@@ -11,6 +11,7 @@ import {
   type MemberProfile,
 } from '@/lib/member';
 import { isPanelPathAllowed } from '@/lib/panel-routes';
+import { MemberCockpitThemeProvider } from '@/components/member/MemberCockpitThemeContext';
 import { MemberProfileProvider } from '@/components/member/MemberProfileContext';
 
 const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk', '/panel/address'];
@@ -131,5 +132,9 @@ export function PanelGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <MemberProfileProvider profile={profile}>{children}</MemberProfileProvider>;
+  return (
+    <MemberCockpitThemeProvider>
+      <MemberProfileProvider profile={profile}>{children}</MemberProfileProvider>
+    </MemberCockpitThemeProvider>
+  );
 }

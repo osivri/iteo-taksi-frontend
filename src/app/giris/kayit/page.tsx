@@ -8,7 +8,7 @@ export default async function MemberRegisterPage({
 }) {
   const { rol } = await searchParams;
   const roleSlug: MemberRoleSlug =
-    rol === 'sofor' || rol === 'mal-sahibi' || rol === 'uye' ? rol : 'sofor';
+    rol === 'sofor' || rol === 'oda-uyesi' || rol === 'mal-sahibi' || rol === 'uye' ? rol : 'sofor';
 
   return <MemberRegisterForm roleSlug={roleSlug} />;
 }

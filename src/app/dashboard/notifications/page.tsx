@@ -13,9 +13,9 @@ interface UserOption {
 }
 
 const segmentRoles = [
-  { value: 'USER', label: 'Üye' },
+  { value: 'USER', label: 'Oda Üyesi' },
   { value: 'DRIVER', label: 'Şoför' },
-  { value: 'PLATE_OWNER', label: 'Plaka Sahibi' },
+  { value: 'PLATE_OWNER', label: 'Oda Üyesi' },
 ] as const;
 
 export default function NotificationsPage() {

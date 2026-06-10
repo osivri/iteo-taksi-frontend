@@ -7,6 +7,7 @@ import { fetchCurrentProfile } from '@/lib/member-profile';
 import { ErrorBlock, LoadingBlock, PageHeader } from '@/components/admin/AdminUi';
 import { validateImageFile } from '@/lib/upload-limits';
 import type { MemberProfile } from '@/lib/member';
+import { parseApiItems } from '@/lib/parse-api-list';
 
 interface Vehicle {
   id: string;
@@ -60,11 +61,11 @@ export default function PanelForgottenItemsPage() {
 
     const [itemsRes, vehiclesRes] = await Promise.all([
       api.get<ApiResponse<ForgottenItem> & { items: ForgottenItem[] }>('/forgotten-items'),
-      api.get<ApiResponse<Vehicle[]>>('/vehicles'),
+      api.get<ApiResponse<Vehicle[]>>('/vehicles?limit=100'),
     ]);
 
     setItems(itemsRes.items ?? []);
-    const v = Array.isArray(vehiclesRes.data) ? vehiclesRes.data : [];
+    const v = parseApiItems<Vehicle>(vehiclesRes);
     setVehicles(v);
     if (v[0]) setVehicleId((current) => current || v[0].id);
   }, []);

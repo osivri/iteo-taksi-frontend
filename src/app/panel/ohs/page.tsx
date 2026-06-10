@@ -1,32 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiResponse } from '@/lib/api/client';
-import { ErrorBlock, LoadingBlock, PageHeader } from '@/components/admin/AdminUi';
-
-interface OhsContent {
-  id: string;
-  title: string;
-  type: string;
-  category: string;
-}
-
-interface OhsDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  body: string | null;
-  type: string;
-  category: string;
-  videoUrl: string | null;
-}
-
-const typeLabels: Record<string, string> = {
-  VIDEO: 'Video',
-  ARTICLE: 'Makale',
-  GUIDE: 'Rehber',
-  FAQ: 'Sık Sorulan Soru',
-};
+import { EmptyState, ErrorBlock, LoadingBlock, SectionCard, StatCard } from '@/components/admin/AdminUi';
+import { OhsChatPanel } from '@/components/member/ohs/OhsChatPanel';
+import { OhsContentCard } from '@/components/member/ohs/OhsContentCard';
+import { OhsDetailPanel } from '@/components/member/ohs/OhsDetailPanel';
+import type { OhsContent, OhsDetail } from '@/components/member/ohs/ohs-shared';
+import { typeLabels } from '@/components/member/ohs/ohs-shared';
+import { ModulePageHero } from '@/components/member/ModulePageHero';
 
 export default function PanelOhsPage() {
   const [items, setItems] = useState<OhsContent[]>([]);
@@ -35,17 +17,40 @@ export default function PanelOhsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [asking, setAsking] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<OhsDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  const load = useCallback(async () => {
+    const res = await api.get<ApiResponse<OhsContent> & { items: OhsContent[] }>('/ohs/contents?limit=30');
+    setItems(res.items ?? []);
+  }, []);
+
   useEffect(() => {
-    api
-      .get<ApiResponse<OhsContent> & { items: OhsContent[] }>('/ohs/contents?limit=20')
-      .then((res) => setItems(res.items ?? []))
+    load()
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [load]);
+
+  const categories = useMemo(() => {
+    const set = new Set(items.map((i) => i.category).filter(Boolean));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (categoryFilter === 'ALL') return items;
+    return items.filter((i) => i.category === categoryFilter);
+  }, [items, categoryFilter]);
+
+  const stats = useMemo(() => {
+    const faqCount = items.filter((i) => i.type === 'FAQ').length;
+    return {
+      total: items.length,
+      categoryCount: categories.length,
+      faqCount,
+    };
+  }, [items, categories.length]);
 
   async function openDetail(id: string) {
     setSelectedId(id);
@@ -61,6 +66,11 @@ export default function PanelOhsPage() {
     } finally {
       setDetailLoading(false);
     }
+  }
+
+  function closeDetail() {
+    setSelectedId(null);
+    setDetail(null);
   }
 
   async function askChatbot() {
@@ -80,110 +90,118 @@ export default function PanelOhsPage() {
   if (loading) return <LoadingBlock />;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="İSG Danışman" description="İş sağlığı ve güvenliği eğitimleri ile danışmanlık." />
+    <div className="space-y-6 pb-10">
+      <ModulePageHero
+        badge="İş Güvenliği"
+        title="İSG Danışman"
+        description="İş sağlığı ve güvenliği eğitimleri, sık sorulan sorular ve yapay zeka destekli danışmanlık."
+        decoration={
+          <svg
+            className="pointer-events-none absolute bottom-4 right-8 h-28 w-28 text-iteo-yellow/10"
+            viewBox="0 0 200 160"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M100 24 L48 48 V96 Q48 132 100 152 Q152 132 152 96 V48 Z" />
+            <path d="M100 72 L88 96 H112 Z" fill="currentColor" opacity="0.5" />
+          </svg>
+        }
+      />
 
       {error && <ErrorBlock message={error} />}
 
-      <div className="space-y-4 rounded-xl border border-iteo-gray-200 bg-white p-6">
-        <h2 className="font-semibold text-iteo-black">İSG Danışmanına Sor</h2>
-        <textarea
-          placeholder="İSG konusunda sorunuzu yazın..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border border-iteo-gray-200 px-4 py-2.5"
-        />
-        <button
-          type="button"
-          onClick={askChatbot}
-          disabled={asking}
-          className="rounded-lg bg-iteo-yellow px-5 py-2.5 text-sm font-semibold text-iteo-black disabled:opacity-60"
-        >
-          {asking ? 'Yanıtlanıyor...' : 'Sor'}
-        </button>
-        {answer && (
-          <div className="rounded-lg bg-iteo-gray-100 p-4 text-sm leading-relaxed text-iteo-gray-800">
-            {answer}
-          </div>
-        )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Eğitim içeriği" value={stats.total} hint="Makale, video ve rehber" />
+        <StatCard label="Konu başlığı" value={stats.categoryCount} hint="Farklı İSG kategorisi" />
+        <StatCard label="Sık sorulan" value={stats.faqCount} hint="SSS içerikleri" />
       </div>
 
-      <div>
-        <h2 className="mb-3 text-lg font-bold text-iteo-black">Eğitim İçerikleri</h2>
-        {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
-            Henüz içerik yok.
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => openDetail(item.id)}
-                className="rounded-xl border border-iteo-gray-200 bg-white p-4 text-left transition-colors hover:border-iteo-yellow hover:bg-iteo-yellow-light/30"
-              >
-                <p className="text-xs font-semibold uppercase text-iteo-yellow">{item.category}</p>
-                <p className="mt-1 font-semibold text-iteo-black">{item.title}</p>
-                <p className="mt-1 text-xs text-iteo-gray-500">{typeLabels[item.type] ?? item.type}</p>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {selectedId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-iteo-black">
-                {detail?.title ?? 'İçerik Detayı'}
-              </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDetail(null);
-                }}
-                className="rounded-lg px-2 py-1 text-sm text-iteo-gray-500 hover:bg-iteo-gray-100"
-              >
-                Kapat
-              </button>
-            </div>
-            {detailLoading ? (
-              <p className="text-sm text-iteo-gray-500">Yükleniyor...</p>
-            ) : detail ? (
-              <div className="space-y-4 text-sm text-iteo-gray-800">
-                <p className="text-xs font-semibold uppercase text-iteo-yellow">
-                  {detail.category} · {typeLabels[detail.type] ?? detail.type}
-                </p>
-                {detail.description && (
-                  <p className="leading-relaxed">{detail.description}</p>
-                )}
-                {detail.body && (
-                  <div className="whitespace-pre-wrap rounded-lg bg-iteo-gray-100 p-4 leading-relaxed">
-                    {detail.body}
-                  </div>
-                )}
-                {detail.videoUrl && (
-                  <a
-                    href={detail.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block font-medium text-iteo-yellow hover:underline"
-                  >
-                    Videoyu Aç
-                  </a>
-                )}
-                {!detail.description && !detail.body && !detail.videoUrl && (
-                  <p className="text-iteo-gray-500">Detay içerik bulunmuyor.</p>
-                )}
-              </div>
-            ) : null}
+      <div className="grid gap-6 xl:grid-cols-12 xl:gap-8">
+        <div className="xl:col-span-5">
+          <div className="xl:sticky xl:top-24">
+            <OhsChatPanel
+              question={question}
+              answer={answer}
+              asking={asking}
+              onQuestionChange={setQuestion}
+              onAsk={askChatbot}
+            />
           </div>
         </div>
-      )}
+
+        <div className="space-y-4 xl:col-span-7">
+          {items.length === 0 ? (
+            <EmptyState
+              icon="shield"
+              title="Henüz içerik yok"
+              description="Oda İSG eğitimleri yayınlandığında burada görünecek."
+            />
+          ) : (
+            <>
+              <div className={`space-y-4 ${selectedId ? 'hidden xl:block' : ''}`}>
+                {categories.length > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCategoryFilter('ALL')}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        categoryFilter === 'ALL'
+                          ? 'bg-iteo-black text-iteo-yellow'
+                          : 'border border-iteo-gray-200 bg-white text-iteo-gray-600 hover:border-iteo-yellow/50'
+                      }`}
+                    >
+                      Tümü
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategoryFilter(cat)}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          categoryFilter === cat
+                            ? 'bg-iteo-yellow text-iteo-black'
+                            : 'border border-iteo-gray-200 bg-white text-iteo-gray-600 hover:border-iteo-yellow/50'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <SectionCard
+                  title="Eğitim içerikleri"
+                  description={`${filteredItems.length} içerik · ${typeLabels.FAQ}, video ve rehberler`}
+                >
+                  {filteredItems.length === 0 ? (
+                    <EmptyState
+                      icon="shield"
+                      title="Bu kategoride içerik yok"
+                      description="Farklı bir kategori seçmeyi deneyin."
+                    />
+                  ) : (
+                    <ul className="grid gap-3 sm:grid-cols-2">
+                      {filteredItems.map((item) => (
+                        <li key={item.id}>
+                          <OhsContentCard
+                            item={item}
+                            active={selectedId === item.id}
+                            onClick={() => openDetail(item.id)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </SectionCard>
+              </div>
+
+              <div className={!selectedId && !detailLoading ? 'hidden xl:block' : ''}>
+                <OhsDetailPanel detail={detail} loading={detailLoading} onClose={closeDetail} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

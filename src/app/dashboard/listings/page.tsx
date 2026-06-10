@@ -14,6 +14,14 @@ interface ListingRow {
   district: string | null;
   neighborhood: string | null;
   contactPhone: string | null;
+  brand: string | null;
+  model: string | null;
+  vehicleYear: number | null;
+  plateNumber: string | null;
+  mileage: number | null;
+  fuelType: string | null;
+  damageInfo: string | null;
+  photos: string[];
   adminNote: string | null;
   createdAt: string;
 }
@@ -113,6 +121,21 @@ export default function AdminListingsPage() {
               <p className="text-lg font-semibold text-iteo-black">
                 {row.price.toLocaleString('tr-TR')} ₺
               </p>
+              {(row.brand || row.model || row.plateNumber) && (
+                <p className="text-xs font-medium text-iteo-gray-600">
+                  {[row.brand, row.model, row.vehicleYear, row.plateNumber].filter(Boolean).join(' · ')}
+                  {row.mileage != null ? ` · ${row.mileage.toLocaleString('tr-TR')} km` : ''}
+                  {row.fuelType ? ` · ${row.fuelType}` : ''}
+                </p>
+              )}
+              {row.damageInfo && (
+                <p className="text-xs text-iteo-gray-500">
+                  <span className="font-semibold">Hasar:</span> {row.damageInfo}
+                </p>
+              )}
+              {row.photos?.length > 0 && (
+                <p className="text-xs text-iteo-gray-500">{row.photos.length} fotoğraf</p>
+              )}
               {row.description && <p className="text-sm text-iteo-gray-700">{row.description}</p>}
               {(row.district || row.neighborhood) && (
                 <p className="text-xs text-iteo-gray-500">

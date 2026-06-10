@@ -1,138 +1,191 @@
 'use client';
 
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiResponse } from '@/lib/api/client';
 import { PRIORITY_LABELS } from '@/components/admin/ContentImageUpload';
-import { ErrorBlock, LoadingBlock, PageHeader } from '@/components/admin/AdminUi';
+import { EmptyState, ErrorBlock, LoadingBlock, SectionCard, StatCard } from '@/components/admin/AdminUi';
+import { AnnouncementCard } from '@/components/member/announcements/AnnouncementCard';
+import { AnnouncementDetailPanel } from '@/components/member/announcements/AnnouncementDetailPanel';
+import type { AnnouncementItem } from '@/components/member/announcements/announcements-shared';
+import { formatShortDate, sortAnnouncements } from '@/components/member/announcements/announcements-shared';
+import { ModulePageHero } from '@/components/member/ModulePageHero';
 
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  priority: string;
-  coverImageUrl: string | null;
-  publishedAt: string | null;
-}
-
-const priorityStyles: Record<string, string> = {
-  URGENT: 'bg-red-600 text-white',
-  HIGH: 'bg-orange-500 text-white',
-  NORMAL: 'bg-iteo-yellow text-iteo-black',
-  LOW: 'bg-iteo-gray-200 text-iteo-gray-700',
-};
+const PRIORITY_FILTERS = ['ALL', 'URGENT', 'HIGH', 'NORMAL', 'LOW'] as const;
+type PriorityFilter = (typeof PRIORITY_FILTERS)[number];
 
 export default function PanelAnnouncementsPage() {
-  const [items, setItems] = useState<Announcement[]>([]);
+  const [items, setItems] = useState<AnnouncementItem[]>([]);
+  const [selected, setSelected] = useState<AnnouncementItem | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('ALL');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Announcement | null>(null);
 
-  useEffect(() => {
-    api
-      .get<ApiResponse<Announcement> & { items: Announcement[] }>('/announcements?limit=30')
-      .then((res) => setItems(res.items ?? []))
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    const res = await api.get<ApiResponse<AnnouncementItem> & { items: AnnouncementItem[] }>(
+      '/announcements?limit=30',
+    );
+    setItems(res.items ?? []);
   }, []);
 
+  useEffect(() => {
+    load()
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [load]);
+
+  const categories = useMemo(() => {
+    const set = new Set(items.map((i) => i.category).filter(Boolean));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'tr'));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    let list = items;
+    if (categoryFilter !== 'ALL') {
+      list = list.filter((i) => i.category === categoryFilter);
+    }
+    if (priorityFilter !== 'ALL') {
+      list = list.filter((i) => i.priority === priorityFilter);
+    }
+    return sortAnnouncements(list);
+  }, [items, categoryFilter, priorityFilter]);
+
+  const stats = useMemo(() => {
+    const important = items.filter((i) => i.priority === 'URGENT' || i.priority === 'HIGH').length;
+    const latest = items
+      .map((i) => i.publishedAt)
+      .filter(Boolean)
+      .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0];
+    return {
+      total: items.length,
+      important,
+      latestLabel: formatShortDate(latest ?? null),
+    };
+  }, [items]);
+
   if (loading) return <LoadingBlock />;
-  if (error) return <ErrorBlock message={error} />;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Duyurular" description="Oda tarafından yayınlanan güncel duyurular." />
+    <div className="space-y-6 pb-10">
+      <ModulePageHero
+        badge="Resmi Bildirim"
+        title="Duyurular"
+        description="Oda tarafından yayınlanan güncel duyurular, uyarılar ve önemli bilgilendirmeler."
+        decoration={
+          <svg
+            className="pointer-events-none absolute bottom-4 right-8 h-24 w-36 text-iteo-yellow/10"
+            viewBox="0 0 200 120"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M24 56 L24 88 L120 112 L120 32 Z" />
+            <rect x="120" y="48" width="16" height="48" rx="4" />
+            <path d="M32 88 Q20 100 16 112" stroke="currentColor" strokeWidth="8" fill="none" />
+          </svg>
+        }
+      />
+
+      {error && <ErrorBlock message={error} />}
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Toplam duyuru" value={stats.total} hint="Yayınlanan bildirim" />
+        <StatCard
+          label="Önemli"
+          value={stats.important}
+          hint="Acil ve yüksek öncelikli"
+          tone={stats.important > 0 ? 'warning' : 'default'}
+        />
+        <StatCard label="Son yayın" value={stats.latestLabel} hint="En güncel duyuru" />
+      </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-iteo-gray-200 bg-white p-10 text-center text-iteo-gray-500">
-          Henüz duyuru yok.
-        </div>
+        <EmptyState
+          icon="megaphone"
+          title="Henüz duyuru yok"
+          description="Oda yeni duyurular yayınladığında burada listelenecek."
+        />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelected(item)}
-                className={`w-full overflow-hidden rounded-2xl border bg-white text-left transition ${
-                  selected?.id === item.id
-                    ? 'border-iteo-yellow shadow-md'
-                    : 'border-iteo-gray-200 hover:border-iteo-yellow/50'
-                }`}>
-                {item.coverImageUrl && (
-                  <div className="relative h-32 w-full bg-iteo-gray-100">
-                    <Image
-                      src={item.coverImageUrl}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                )}
-                <div className="p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold uppercase text-iteo-yellow">{item.category}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        priorityStyles[item.priority] ?? priorityStyles.NORMAL
-                      }`}>
-                      {PRIORITY_LABELS[item.priority] ?? item.priority}
-                    </span>
-                  </div>
-                  <p className="mt-1 font-semibold text-iteo-black">{item.title}</p>
-                  <p className="mt-1 text-xs text-iteo-gray-500">
-                    {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('tr-TR') : '—'}
-                  </p>
-                </div>
-              </button>
-            ))}
+        <div className="grid gap-6 xl:grid-cols-12 xl:gap-8">
+          <div className={`space-y-4 xl:col-span-5 ${selected ? 'hidden xl:block' : ''}`}>
+            <div className="flex flex-wrap gap-2">
+              {PRIORITY_FILTERS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPriorityFilter(key)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    priorityFilter === key
+                      ? key === 'URGENT'
+                        ? 'bg-iteo-danger text-white'
+                        : 'bg-iteo-black text-iteo-yellow'
+                      : 'border border-iteo-gray-200 bg-white text-iteo-gray-600 hover:border-iteo-yellow/50'
+                  }`}
+                >
+                  {key === 'ALL' ? 'Tüm öncelikler' : PRIORITY_LABELS[key]}
+                </button>
+              ))}
+            </div>
+
+            {categories.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCategoryFilter('ALL')}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    categoryFilter === 'ALL'
+                      ? 'bg-iteo-yellow text-iteo-black'
+                      : 'border border-iteo-gray-200 bg-white text-iteo-gray-600 hover:border-iteo-yellow/50'
+                  }`}
+                >
+                  Tüm kategoriler
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      categoryFilter === cat
+                        ? 'bg-iteo-yellow text-iteo-black'
+                        : 'border border-iteo-gray-200 bg-white text-iteo-gray-600 hover:border-iteo-yellow/50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <SectionCard
+              title="Duyuru listesi"
+              description={`${filteredItems.length} duyuru · öncelik sırasına göre`}
+            >
+              {filteredItems.length === 0 ? (
+                <EmptyState
+                  icon="megaphone"
+                  title="Eşleşen duyuru yok"
+                  description="Filtreleri değiştirerek tekrar deneyin."
+                />
+              ) : (
+                <ul className="space-y-3">
+                  {filteredItems.map((item) => (
+                    <li key={item.id}>
+                      <AnnouncementCard
+                        item={item}
+                        active={selected?.id === item.id}
+                        onClick={() => setSelected(item)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
           </div>
 
-          <div className="min-h-[280px] overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
-            {selected ? (
-              <>
-                {selected.coverImageUrl && (
-                  <div className="relative h-44 w-full bg-iteo-gray-100">
-                    <Image
-                      src={selected.coverImageUrl}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                )}
-                <div className="p-6">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase text-iteo-yellow">{selected.category}</p>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        priorityStyles[selected.priority] ?? priorityStyles.NORMAL
-                      }`}>
-                      {PRIORITY_LABELS[selected.priority] ?? selected.priority}
-                    </span>
-                  </div>
-                  <h2 className="mt-2 text-xl font-bold text-iteo-black">{selected.title}</h2>
-                  <p className="mt-1 text-xs text-iteo-gray-500">
-                    {selected.publishedAt
-                      ? new Date(selected.publishedAt).toLocaleDateString('tr-TR', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })
-                      : ''}
-                  </p>
-                  <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-iteo-gray-700">
-                    {selected.content}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <p className="p-6 text-iteo-gray-500">Detay görmek için bir duyuru seçin.</p>
-            )}
+          <div className={`xl:col-span-7 ${!selected ? 'hidden xl:block' : ''}`}>
+            <div className="xl:sticky xl:top-24">
+              <AnnouncementDetailPanel item={selected} onClose={() => setSelected(null)} />
+            </div>
           </div>
         </div>
       )}

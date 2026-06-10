@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiResponse } from '@/lib/api/client';
-import { ErrorBlock, LoadingBlock, PageHeader } from '@/components/admin/AdminUi';
+import { ErrorBlock, LoadingBlock, SectionCard } from '@/components/admin/AdminUi';
 import { FinanceBarChart, FinanceTrendChart } from '@/components/member/FinanceCharts';
 import { FinancePeriodTabs } from '@/components/member/FinancePeriodTabs';
 import { FinanceEntryForm } from '@/components/member/finance/FinanceEntryForm';
@@ -10,6 +10,8 @@ import { FinancePlatePicker } from '@/components/member/finance/FinancePlatePick
 import { FinanceReceiptModal } from '@/components/member/finance/FinanceReceiptModal';
 import { FinanceRecordsList } from '@/components/member/finance/FinanceRecordsList';
 import { FinanceSummaryStrip } from '@/components/member/finance/FinanceSummaryStrip';
+import { ModulePageHero } from '@/components/member/ModulePageHero';
+import { IteoIcon } from '@/components/ui/icons';
 import {
   buildRangeQuery,
   defaultPeriodSelection,
@@ -19,6 +21,7 @@ import {
   type FinanceTypeFilter,
 } from '@/lib/finance-period';
 import { validateReceiptFile } from '@/lib/upload-limits';
+import { parseApiItems } from '@/lib/parse-api-list';
 
 interface Vehicle {
   id: string;
@@ -89,6 +92,7 @@ export default function PanelFinancePage() {
   const attachInputRef = useRef<HTMLInputElement>(null);
   const attachRecordIdRef = useRef<string | null>(null);
   const scanModeRef = useRef<'new' | 'attach'>('new');
+  const formRef = useRef<HTMLDivElement>(null);
 
   const plateById = useMemo(
     () => Object.fromEntries(vehicles.map((v) => [v.id, v.plateNumber])),
@@ -101,9 +105,9 @@ export default function PanelFinancePage() {
 
   useEffect(() => {
     api
-      .get<ApiResponse<Vehicle[]>>('/vehicles')
+      .get<ApiResponse<Vehicle[]>>('/vehicles?limit=100')
       .then((res) => {
-        const list = Array.isArray(res.data) ? res.data : [];
+        const list = parseApiItems<Vehicle>(res);
         setVehicles(list);
         setVehicleId((current) => (list.some((v) => v.id === current) ? current : list[0]?.id ?? ''));
       })
@@ -198,11 +202,12 @@ export default function PanelFinancePage() {
           return;
         }
       } catch {
-        // OCR başarısız — manuel kayıt için URL sakla
+        // OCR başarısız — manuel kayıt
       }
 
       setPendingReceiptUrl(url);
       setType('EXPENSE');
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -286,18 +291,64 @@ export default function PanelFinancePage() {
     }
   }
 
+  function focusEntry(kind: 'INCOME' | 'EXPENSE') {
+    setType(kind);
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   if (initialLoad && !vehicleId && vehicles.length === 0) {
     return <LoadingBlock />;
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 pb-8">
-      <PageHeader
-        title="Muhasebe"
-        description="Plaka seçin, gelir-gider kaydedin ve dönemsel raporlarınızı takip edin."
+    <div className="space-y-6 pb-10">
+      <ModulePageHero
+        badge="Muhasebe"
+        title="Gelir & Gider"
+        description="Plaka bazlı hasılat ve giderlerinizi takip edin, fiş tarayın ve dönemsel raporlarınızı görün."
+        decoration={
+          <svg
+            className="pointer-events-none absolute bottom-4 right-8 h-24 w-36 text-iteo-yellow/10"
+            viewBox="0 0 200 120"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M20 80 H180 L165 40 H35 Z" />
+            <circle cx="55" cy="88" r="14" />
+            <circle cx="145" cy="88" r="14" />
+          </svg>
+        }
       />
 
       {error && <ErrorBlock message={error} />}
+
+      {canEnterData && (
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => openReceiptPicker('new')}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-xl bg-iteo-black px-4 py-2.5 text-sm font-semibold text-iteo-yellow transition hover:bg-iteo-black-soft disabled:opacity-60"
+          >
+            <IteoIcon name="receipt" size={18} />
+            Fiş Tara
+          </button>
+          <button
+            type="button"
+            onClick={() => focusEntry('INCOME')}
+            className="inline-flex items-center gap-2 rounded-xl border border-iteo-success/30 bg-iteo-success-light px-4 py-2.5 text-sm font-semibold text-iteo-success"
+          >
+            + Gelir Ekle
+          </button>
+          <button
+            type="button"
+            onClick={() => focusEntry('EXPENSE')}
+            className="inline-flex items-center gap-2 rounded-xl border border-iteo-danger/30 bg-iteo-danger-light px-4 py-2.5 text-sm font-semibold text-iteo-danger"
+          >
+            − Gider Ekle
+          </button>
+        </div>
+      )}
 
       <FinancePlatePicker
         vehicles={vehicles}
@@ -318,55 +369,53 @@ export default function PanelFinancePage() {
             />
           )}
 
-          <details open className="group overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 sm:px-5 [&::-webkit-details-marker]:hidden">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-iteo-black">Dönem filtresi</span>
-                <span className="rounded-full bg-iteo-gray-100 px-2.5 py-0.5 text-xs font-medium text-iteo-gray-600">
-                  {periodLabel}
-                </span>
+          <SectionCard
+            title="Dönem filtresi"
+            description={periodLabel}
+            action={
+              <span className="rounded-full bg-iteo-gray-100 px-3 py-1 text-xs font-semibold text-iteo-gray-600">
+                {selectedPlate}
+              </span>
+            }
+          >
+            <FinancePeriodTabs
+              embedded
+              selection={periodSelection}
+              onChange={(sel) => {
+                setPeriodSelection(sel);
+                setLoading(true);
+              }}
+            />
+          </SectionCard>
+
+          <div className="grid gap-6 xl:grid-cols-12 xl:gap-8">
+            <div ref={formRef} className="xl:col-span-4">
+              <div className="xl:sticky xl:top-24">
+                <FinanceEntryForm
+                  type={type}
+                  onTypeChange={setType}
+                  category={category}
+                  onCategoryChange={setCategory}
+                  amount={amount}
+                  onAmountChange={setAmount}
+                  recordDate={recordDate}
+                  onRecordDateChange={setRecordDate}
+                  description={description}
+                  onDescriptionChange={setDescription}
+                  pendingReceiptUrl={pendingReceiptUrl}
+                  onRemoveReceipt={() => setPendingReceiptUrl(null)}
+                  onReceiptClick={() => openReceiptPicker('new')}
+                  onSubmit={handleSubmit}
+                  saving={saving}
+                  disabled={!canEnterData}
+                  plateLabel={selectedPlate}
+                />
               </div>
-              <span className="text-xs font-medium text-iteo-gray-500 group-open:hidden">Göster</span>
-              <span className="hidden text-xs font-medium text-iteo-gray-500 group-open:inline">Gizle</span>
-            </summary>
-            <div className="border-t border-iteo-gray-100 p-4 pt-0 sm:p-5 sm:pt-0">
-              <FinancePeriodTabs
-                embedded
-                selection={periodSelection}
-                onChange={(sel) => {
-                  setPeriodSelection(sel);
-                  setLoading(true);
-                }}
-              />
-            </div>
-          </details>
-
-          <div className="grid gap-5 lg:grid-cols-5">
-            <div className="lg:col-span-2">
-              <FinanceEntryForm
-                type={type}
-                onTypeChange={setType}
-                category={category}
-                onCategoryChange={setCategory}
-                amount={amount}
-                onAmountChange={setAmount}
-                recordDate={recordDate}
-                onRecordDateChange={setRecordDate}
-                description={description}
-                onDescriptionChange={setDescription}
-                pendingReceiptUrl={pendingReceiptUrl}
-                onRemoveReceipt={() => setPendingReceiptUrl(null)}
-                onReceiptClick={() => openReceiptPicker('new')}
-                onSubmit={handleSubmit}
-                saving={saving}
-                disabled={!canEnterData}
-                plateLabel={selectedPlate}
-              />
             </div>
 
-            <div className="space-y-5 lg:col-span-3">
+            <div className="space-y-6 xl:col-span-8">
               {summary && (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   <FinanceBarChart
                     income={summary.totalIncome}
                     expense={summary.totalExpense}

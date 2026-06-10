@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { PanelGate } from '@/components/member/PanelGate';
 import { MemberShell } from '@/components/member/MemberShell';
 import { useMemberProfileContext } from '@/components/member/MemberProfileContext';
-import { needsAddressSetup, needsKvkkAcceptance, needsProfileSetup, type MemberRole } from '@/lib/member';
+import { needsAddressSetup, needsKvkkAcceptance, needsProfileSetup, toMemberRole } from '@/lib/member';
 
 const SETUP_PATHS = ['/panel/onboarding', '/panel/kvkk', '/panel/address'];
 
@@ -25,7 +25,7 @@ function PanelLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <MemberShell
-      role={profile.role as MemberRole}
+      role={toMemberRole(profile.role)}
       userName={`${profile.firstName} ${profile.lastName}`}>
       {children}
     </MemberShell>

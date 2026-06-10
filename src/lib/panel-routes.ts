@@ -1,4 +1,4 @@
-import type { MemberRole } from '@/lib/member';
+import { toMemberRole, type MemberRole } from '@/lib/member';
 
 const MEMBER_ROLES: MemberRole[] = ['DRIVER', 'PLATE_OWNER', 'USER'];
 
@@ -24,5 +24,5 @@ export function getAllowedRolesForPanelPath(pathname: string): MemberRole[] | nu
 export function isPanelPathAllowed(pathname: string, role: string): boolean {
   const allowed = getAllowedRolesForPanelPath(pathname);
   if (!allowed) return true;
-  return allowed.includes(role as MemberRole);
+  return allowed.includes(toMemberRole(role));
 }

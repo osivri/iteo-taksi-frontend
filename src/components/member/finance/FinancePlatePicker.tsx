@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { IteoIcon } from '@/components/ui/icons';
 
 export interface VehicleOption {
   id: string;
@@ -25,14 +26,14 @@ export function FinancePlatePicker({
   const selected = vehicles.find((v) => v.id === value);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
-      <div className="flex items-start gap-3 border-b border-iteo-gray-100 bg-iteo-black px-4 py-4 sm:px-5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-iteo-yellow text-sm font-bold text-iteo-black">
-          1
-        </span>
+    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-md">
+      <div className="relative flex items-start gap-3 border-b border-white/10 bg-gradient-to-r from-iteo-black to-[#1f1f1f] px-4 py-5 sm:px-6">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-iteo-yellow/20">
+          <IteoIcon name="taxi" size={22} className="text-iteo-yellow" />
+        </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-bold text-white">Plaka seçin</h2>
-          <p className="mt-0.5 text-xs text-white/70">
+          <h2 className="text-base font-bold text-white">Çalışma plakası</h2>
+          <p className="mt-0.5 text-sm text-white/65">
             Kayıt ve raporlar seçtiğiniz plakaya göre listelenir.
           </p>
         </div>
@@ -70,9 +71,7 @@ export function FinancePlatePicker({
                       ? 'border-iteo-yellow bg-iteo-yellow text-iteo-black shadow-md shadow-iteo-yellow/20 ring-2 ring-iteo-yellow/30'
                       : 'border-iteo-gray-200 bg-white text-iteo-gray-700 hover:border-iteo-yellow/50 hover:bg-iteo-yellow/5'
                   }`}>
-                  <span aria-hidden className="text-base">
-                    🚕
-                  </span>
+                  <IteoIcon name="taxi" size={16} className={active ? 'text-iteo-black' : 'text-iteo-gray-500'} />
                   {v.plateNumber}
                 </button>
               );

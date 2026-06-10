@@ -1,20 +1,22 @@
 'use client';
 
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  hint?: string;
-}
-
-export function StatCard({ label, value, hint }: StatCardProps) {
-  return (
-    <div className="rounded-xl border border-iteo-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-iteo-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-iteo-black">{value}</p>
-      {hint && <p className="mt-1 text-xs text-iteo-gray-500">{hint}</p>}
-    </div>
-  );
-}
+export {
+  PageHeader,
+  StatCard,
+  SectionCard,
+  ActionCard,
+  StatusBadge,
+  EmptyState,
+  FilterBar,
+  FilterField,
+  PrimaryButton,
+  ResponsiveTable,
+  LoadingBlock,
+  ErrorBlock,
+  paymentStatusTone,
+  appointmentStatusTone,
+} from '@/components/ui/DesignSystem';
+export type { StatusTone, ResponsiveColumn } from '@/components/ui/DesignSystem';
 
 interface DataTableProps {
   columns: { key: string; label: string }[];
@@ -25,14 +27,14 @@ interface DataTableProps {
 export function DataTable({ columns, rows, emptyMessage = 'Kayıt bulunamadı' }: DataTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
+      <div className="rounded-2xl border border-dashed border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-iteo-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-iteo-gray-200 bg-white">
       <table className="min-w-full text-sm">
         <thead className="border-b border-iteo-gray-200 bg-iteo-gray-100">
           <tr>
@@ -56,29 +58,6 @@ export function DataTable({ columns, rows, emptyMessage = 'Kayıt bulunamadı' }
         </tbody>
       </table>
     </div>
-  );
-}
-
-export function PageHeader({ title, description }: { title: string; description?: string }) {
-  return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-iteo-black">{title}</h1>
-      {description && <p className="mt-1 text-iteo-gray-500">{description}</p>}
-    </div>
-  );
-}
-
-export function LoadingBlock() {
-  return (
-    <div className="rounded-xl border border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
-      Yükleniyor...
-    </div>
-  );
-}
-
-export function ErrorBlock({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{message}</div>
   );
 }
 
@@ -109,7 +88,7 @@ export function CrudTable({
 }: CrudTableProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
+      <div className="rounded-2xl border border-dashed border-iteo-gray-200 bg-white p-8 text-center text-iteo-gray-500">
         {emptyMessage}
       </div>
     );
@@ -118,7 +97,7 @@ export function CrudTable({
   const hasActions = onEdit || onDelete || onTogglePublish;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-iteo-gray-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-iteo-gray-200 bg-white">
       <table className="min-w-full text-sm">
         <thead className="border-b border-iteo-gray-200 bg-iteo-gray-100">
           <tr>
@@ -196,7 +175,7 @@ export function EditModal({ title, open, saving, onClose, onSubmit, children }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-iteo-black">{title}</h2>
           <button
@@ -213,14 +192,14 @@ export function EditModal({ title, open, saving, onClose, onSubmit, children }: 
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-iteo-yellow px-4 py-2.5 font-semibold text-iteo-black disabled:opacity-60"
+              className="rounded-xl bg-iteo-yellow px-4 py-2.5 font-semibold text-iteo-black disabled:opacity-60"
             >
               {saving ? 'Kaydediliyor...' : 'Kaydet'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-iteo-gray-200 px-4 py-2.5 text-sm"
+              className="rounded-xl border border-iteo-gray-200 px-4 py-2.5 text-sm"
             >
               İptal
             </button>

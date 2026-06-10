@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent } from 'react';
+import { IteoIcon } from '@/components/ui/icons';
 
 const QUICK_CATEGORIES = {
   EXPENSE: ['Yakıt', 'Bakım', 'Sigorta', 'Vergi', 'Yıkama', 'Diğer'],
@@ -49,16 +50,16 @@ export function FinanceEntryForm({
   const quickCategories = QUICK_CATEGORIES[type];
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-iteo-gray-100 px-4 py-4 sm:px-5">
+    <section className="overflow-hidden rounded-2xl border border-iteo-gray-200 bg-white shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-iteo-gray-100 bg-gradient-to-r from-iteo-yellow/15 to-white px-4 py-5 sm:px-5">
         <div className="flex items-start gap-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-iteo-yellow text-sm font-bold text-iteo-black">
-            2
-          </span>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-iteo-yellow">
+            <IteoIcon name="finance" size={20} className="text-iteo-black" />
+          </div>
           <div>
-            <h2 className="text-sm font-bold text-iteo-black">Yeni kayıt ekle</h2>
-            <p className="mt-0.5 text-xs text-iteo-gray-500">
-              {plateLabel ? `${plateLabel} için gelir veya gider girin` : 'Plaka seçtikten sonra kayıt ekleyebilirsiniz'}
+            <h2 className="text-base font-bold text-iteo-black">Yeni kayıt</h2>
+            <p className="mt-0.5 text-sm text-iteo-gray-500">
+              {plateLabel ? `${plateLabel} için gelir veya gider` : 'Plaka seçin'}
             </p>
           </div>
         </div>
@@ -66,20 +67,18 @@ export function FinanceEntryForm({
           type="button"
           onClick={onReceiptClick}
           disabled={saving || disabled}
-          className="inline-flex items-center gap-2 rounded-xl border border-iteo-gray-200 bg-iteo-gray-50 px-3 py-2 text-xs font-semibold text-iteo-black transition-colors hover:border-iteo-yellow hover:bg-iteo-yellow/10 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
-          <span aria-hidden>📷</span>
-          {saving ? 'Yükleniyor...' : 'Fiş yükle'}
+          className="inline-flex items-center gap-2 rounded-xl border border-iteo-black/10 bg-iteo-black px-3 py-2.5 text-xs font-semibold text-iteo-yellow transition hover:bg-iteo-black-soft disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm">
+          <IteoIcon name="receipt" size={16} />
+          {saving ? 'Yükleniyor...' : 'Fiş tara'}
         </button>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-5 p-4 sm:p-5">
         {disabled && (
           <div className="flex items-start gap-3 rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3">
-            <span className="text-lg" aria-hidden>
-              👆
-            </span>
+            <IteoIcon name="taxi" size={20} className="shrink-0 text-amber-700" />
             <p className="text-sm text-amber-900">
-              Kayıt eklemek için önce <strong>1. adımdan plaka seçin</strong>.
+              Kayıt eklemek için önce <strong>plaka seçin</strong>.
             </p>
           </div>
         )}

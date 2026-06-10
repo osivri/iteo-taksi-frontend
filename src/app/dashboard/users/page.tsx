@@ -31,9 +31,9 @@ const roles = ['USER', 'DRIVER', 'PLATE_OWNER', 'ADMIN', 'SUPER_ADMIN'] as const
 const statuses = ['ACTIVE', 'PASSIVE', 'PENDING_VERIFICATION'] as const;
 
 const roleLabels: Record<string, string> = {
-  USER: 'Üye',
+  USER: 'Oda Üyesi',
   DRIVER: 'Şoför',
-  PLATE_OWNER: 'Plaka Sahibi',
+  PLATE_OWNER: 'Oda Üyesi',
   ADMIN: 'Admin',
   SUPER_ADMIN: 'Süper Admin',
 };
@@ -146,7 +146,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Kullanıcı Yönetimi" description="Üye, şoför ve plaka sahibi kayıtları" />
+      <PageHeader title="Kullanıcı Yönetimi" description="Oda üyesi, şoför ve yönetici kayıtları" />
       {error && <ErrorBlock message={error} />}
 
       <form onSubmit={handleSearch} className="flex flex-wrap gap-3">

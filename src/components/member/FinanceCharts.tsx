@@ -10,7 +10,8 @@ export function FinanceBarChart({ income, expense, currency = '₺' }: FinanceBa
   const max = Math.max(income, expense, 1);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-iteo-gray-200 bg-white p-5 shadow-sm">
+    <div className="space-y-4 rounded-2xl border border-iteo-gray-200 bg-white p-5 shadow-md">
+      <p className="text-sm font-bold text-iteo-black">Gelir / Gider dağılımı</p>
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-green-700">Gelir</span>
@@ -63,8 +64,8 @@ export function FinanceTrendChart({ points, currency = '₺' }: FinanceTrendChar
   const chartHeight = 80;
 
   return (
-    <div className="rounded-2xl border border-iteo-gray-200 bg-white p-5 shadow-sm">
-      <p className="mb-3 text-sm font-semibold text-iteo-black">Günlük trend</p>
+    <div className="rounded-2xl border border-iteo-gray-200 bg-white p-5 shadow-md">
+      <p className="mb-3 text-sm font-bold text-iteo-black">Günlük trend</p>
       <div className="flex items-end gap-1" style={{ height: chartHeight }}>
         {visible.map((point) => {
           const netHeight = (Math.abs(point.net) / maxVal) * chartHeight;
