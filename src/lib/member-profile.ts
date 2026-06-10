@@ -4,7 +4,11 @@ import type { MemberProfile } from '@/lib/member';
 
 async function fetchProfileFromServerRoute(): Promise<MemberProfile | null> {
   const response = await fetch('/api/profile', { credentials: 'include' });
-  if (!response.ok) return null;
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    const json = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(json.error ?? 'Profil yüklenemedi');
+  }
   const json = (await response.json()) as { profile?: MemberProfile };
   return json.profile ?? null;
 }
@@ -19,8 +23,8 @@ export async function fetchCurrentProfile(): Promise<MemberProfile | null> {
   try {
     const res = await api.get<ApiResponse<MemberProfile>>('/users/me');
     return res.data ?? null;
-  } catch {
-    return null;
+  } catch (e) {
+    throw e instanceof Error ? e : new Error('Profil yüklenemedi');
   }
 }
 

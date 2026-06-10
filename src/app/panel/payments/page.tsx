@@ -12,6 +12,13 @@ interface Payment {
   paidAt: string | null;
 }
 
+interface FeeConfig {
+  key: string;
+  amount: number;
+  currency: string;
+  label: string | null;
+}
+
 const statusLabels: Record<string, string> = {
   PENDING: 'Beklemede',
   SUCCESS: 'Başarılı',
@@ -29,13 +36,19 @@ const typeLabels: Record<string, string> = {
 
 export default function PanelPaymentsPage() {
   const [items, setItems] = useState<Payment[]>([]);
+  const [duesAmount, setDuesAmount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await api.get<ApiResponse<Payment> & { items: Payment[] }>('/payments?limit=30');
-    setItems(res.items ?? []);
+    const [paymentsRes, feesRes] = await Promise.all([
+      api.get<ApiResponse<Payment> & { items: Payment[] }>('/payments?limit=30'),
+      api.get<ApiResponse<FeeConfig[]>>('/fees'),
+    ]);
+    setItems(paymentsRes.items ?? []);
+    const dues = (feesRes.data ?? []).find((f) => f.key === 'DUES');
+    setDuesAmount(dues?.amount ?? null);
   }, []);
 
   useEffect(() => {
@@ -44,11 +57,11 @@ export default function PanelPaymentsPage() {
       .finally(() => setLoading(false));
   }, [load]);
 
-  async function payPending() {
+  async function payDues() {
     setPaying(true);
     setError(null);
     try {
-      await api.post('/payments/checkout', { type: 'DUES', amount: 500 });
+      await api.post('/payments/checkout', { type: 'DUES' });
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -67,13 +80,18 @@ export default function PanelPaymentsPage() {
 
       <div className="rounded-xl border border-iteo-yellow/30 bg-iteo-yellow-light p-5">
         <p className="font-semibold text-iteo-black">Oda aidatı ödemesi</p>
-        <p className="mt-1 text-sm text-iteo-gray-600">Demo ödeme akışı ile aidat ödemenizi simüle edebilirsiniz.</p>
+        <p className="mt-1 text-sm text-iteo-gray-600">
+          {duesAmount != null
+            ? `Güncel aidat tutarı: ${duesAmount.toLocaleString('tr-TR')} ₺`
+            : 'Aidat tutarı yükleniyor...'}
+        </p>
         <button
           type="button"
-          onClick={payPending}
-          disabled={paying}
-          className="mt-4 rounded-lg bg-iteo-yellow px-4 py-2 text-sm font-semibold text-iteo-black disabled:opacity-60">
-          {paying ? 'İşleniyor...' : 'Aidat Öde (Demo)'}
+          onClick={payDues}
+          disabled={paying || duesAmount == null}
+          className="mt-4 rounded-lg bg-iteo-yellow px-4 py-2 text-sm font-semibold text-iteo-black disabled:opacity-60"
+        >
+          {paying ? 'İşleniyor...' : 'Aidat Öde'}
         </button>
       </div>
 

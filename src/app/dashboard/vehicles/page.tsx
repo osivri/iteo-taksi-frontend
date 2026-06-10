@@ -19,8 +19,8 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     api
-      .get<ApiResponse<VehicleRow> & { data: VehicleRow[] }>('/vehicles')
-      .then((res) => setRows((res as { data: VehicleRow[] }).data ?? []))
+      .get<ApiResponse<{ items: VehicleRow[] }>>('/vehicles')
+      .then((res) => setRows(res.data?.items ?? []))
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);

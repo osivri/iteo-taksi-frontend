@@ -36,7 +36,16 @@ export function PanelGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const currentProfile = await fetchCurrentProfile();
+      let currentProfile: MemberProfile | null = null;
+      try {
+        currentProfile = await fetchCurrentProfile();
+      } catch (e) {
+        if (!cancelled) {
+          setError((e as Error).message);
+          setReady(true);
+        }
+        return;
+      }
 
       if (!currentProfile) {
         if (!cancelled) {
