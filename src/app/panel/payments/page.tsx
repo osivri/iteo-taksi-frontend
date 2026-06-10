@@ -32,6 +32,12 @@ interface FeeConfig {
 }
 
 type PaymentType = 'DUES' | 'APP_FEE' | 'SERVICE_FEE';
+type PaymentTab = 'pay' | 'history';
+
+const paymentTabs: { id: PaymentTab; label: string; icon: 'card' | 'receipt' }[] = [
+  { id: 'pay', label: 'Ödeme Başlat', icon: 'card' },
+  { id: 'history', label: 'Ödeme Geçmişi', icon: 'receipt' },
+];
 
 const statusLabels: Record<string, string> = {
   PENDING: 'Beklemede',
@@ -66,6 +72,7 @@ export default function PanelPaymentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<PaymentTab>('pay');
   const [payingType, setPayingType] = useState<PaymentType | null>(null);
 
   const load = useCallback(async () => {
@@ -171,12 +178,26 @@ export default function PanelPaymentsPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
-        <div className="space-y-4 lg:col-span-5">
-          <p className="text-sm font-bold uppercase tracking-wider text-iteo-gray-500">
-            Ödeme başlat
-          </p>
+      <div className="flex flex-wrap gap-1 rounded-xl border border-iteo-gray-200 bg-iteo-gray-50 p-1">
+        {paymentTabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition sm:flex-none ${
+              tab === t.id
+                ? 'bg-iteo-yellow text-iteo-black shadow-sm'
+                : 'text-iteo-gray-600 hover:bg-white hover:text-iteo-black'
+            }`}
+          >
+            <IteoIcon name={t.icon} size={16} />
+            {t.label}
+          </button>
+        ))}
+      </div>
 
+      {tab === 'pay' ? (
+        <div>
           {payableFees.length === 0 ? (
             <EmptyState
               icon="card"
@@ -184,116 +205,109 @@ export default function PanelPaymentsPage() {
               description="Ödeme tutarları yüklenemedi. Lütfen daha sonra tekrar deneyin."
             />
           ) : (
-            payableFees.map((fee, index) => {
-              const type = fee.key as PaymentType;
-              const isPrimary = index === 0;
-              return (
-                <div
-                  key={fee.key}
-                  className={`relative overflow-hidden rounded-2xl border shadow-sm transition hover:shadow-lg ${
-                    isPrimary
-                      ? 'border-iteo-yellow/40 bg-gradient-to-br from-iteo-yellow via-[#ffdb4d] to-iteo-yellow-dark'
-                      : 'border-iteo-gray-200 bg-white'
-                  }`}
-                >
-                  {isPrimary && (
-                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/25 blur-xl" />
-                  )}
-                  <div className="relative p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                          isPrimary ? 'bg-iteo-black/10' : 'bg-iteo-gray-100'
-                        }`}
-                      >
-                        <IteoIcon
-                          name={typeIcons[type] ?? 'card'}
-                          size={24}
-                          className={isPrimary ? 'text-iteo-black' : 'text-iteo-black/70'}
-                        />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {payableFees.map((fee, index) => {
+                const type = fee.key as PaymentType;
+                const isPrimary = index === 0;
+                return (
+                  <div
+                    key={fee.key}
+                    className={`relative overflow-hidden rounded-xl border shadow-sm transition hover:shadow-md ${
+                      isPrimary
+                        ? 'border-iteo-yellow/40 bg-gradient-to-br from-iteo-yellow via-[#ffdb4d] to-iteo-yellow-dark'
+                        : 'border-iteo-gray-200 bg-white'
+                    }`}
+                  >
+                    {isPrimary && (
+                      <span className="absolute right-3 top-3 rounded-full bg-iteo-black px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-iteo-yellow">
+                        Önerilen
+                      </span>
+                    )}
+                    <div className="relative flex flex-col p-4">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                            isPrimary ? 'bg-iteo-black/10' : 'bg-iteo-gray-100'
+                          }`}
+                        >
+                          <IteoIcon
+                            name={typeIcons[type] ?? 'card'}
+                            size={18}
+                            className={isPrimary ? 'text-iteo-black' : 'text-iteo-black/70'}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1 pr-14">
+                          <p className="text-sm font-bold text-iteo-black">
+                            {fee.label ?? typeLabels[type]}
+                          </p>
+                          <p className={`mt-0.5 text-xs leading-snug ${isPrimary ? 'text-iteo-black/65' : 'text-iteo-gray-500'}`}>
+                            {typeDescriptions[type]}
+                          </p>
+                        </div>
                       </div>
-                      {isPrimary && (
-                        <span className="rounded-full bg-iteo-black px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-iteo-yellow">
-                          Önerilen
-                        </span>
-                      )}
-                    </div>
-                    <p className={`mt-4 text-lg font-bold ${isPrimary ? 'text-iteo-black' : 'text-iteo-black'}`}>
-                      {fee.label ?? typeLabels[type]}
-                    </p>
-                    <p className={`mt-1 text-sm ${isPrimary ? 'text-iteo-black/65' : 'text-iteo-gray-500'}`}>
-                      {typeDescriptions[type]}
-                    </p>
-                    <p className={`mt-4 text-4xl font-black tracking-tight ${isPrimary ? 'text-iteo-black' : 'text-iteo-black'}`}>
-                      {fee.amount.toLocaleString('tr-TR')}{' '}
-                      <span className="text-2xl">{fee.currency === 'TRY' ? '₺' : fee.currency}</span>
-                    </p>
-                    <div className="mt-6">
-                      <PrimaryButton
-                        onClick={() => startCheckout(type)}
-                        disabled={payingType !== null}
-                      >
-                        {payingType === type
-                          ? 'Yönlendiriliyor...'
-                          : `${fee.label ?? typeLabels[type]} Öde`}
-                      </PrimaryButton>
+                      <p className="mt-3 text-2xl font-black tracking-tight text-iteo-black">
+                        {fee.amount.toLocaleString('tr-TR')}{' '}
+                        <span className="text-lg">{fee.currency === 'TRY' ? '₺' : fee.currency}</span>
+                      </p>
+                      <div className="mt-3">
+                        <PrimaryButton onClick={() => startCheckout(type)} disabled={payingType !== null}>
+                          {payingType === type
+                            ? 'Yönlendiriliyor...'
+                            : `${fee.label ?? typeLabels[type]} Öde`}
+                        </PrimaryButton>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
-
-        <div className="lg:col-span-7">
-          <SectionCard
-            title="Ödeme Geçmişi"
-            description={`${items.length} kayıt listeleniyor`}
-          >
-            {items.length === 0 ? (
-              <EmptyState
-                icon="receipt"
-                title="Henüz ödeme yok"
-                description="İlk ödemenizi başlattığınızda kayıtlar burada görünür."
-              />
-            ) : (
-              <ul className="divide-y divide-iteo-gray-100">
-                {items.map((payment) => (
-                  <li
-                    key={payment.id}
-                    className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-iteo-gray-100">
-                        <IteoIcon name="receipt" size={20} className="text-iteo-black/70" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-iteo-black">
-                          {typeLabels[payment.type] ?? payment.type}
-                        </p>
-                        <p className="mt-0.5 text-sm text-iteo-gray-500">
-                          {payment.paidAt
-                            ? new Date(payment.paidAt).toLocaleString('tr-TR')
-                            : 'Ödeme tarihi bekleniyor'}
-                        </p>
-                      </div>
+      ) : (
+        <SectionCard title="Ödeme Geçmişi" description={`${items.length} kayıt listeleniyor`}>
+          {items.length === 0 ? (
+            <EmptyState
+              icon="receipt"
+              title="Henüz ödeme yok"
+              description="İlk ödemenizi başlattığınızda kayıtlar burada görünür."
+            />
+          ) : (
+            <ul className="divide-y divide-iteo-gray-100">
+              {items.map((payment) => (
+                <li
+                  key={payment.id}
+                  className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-iteo-gray-100">
+                      <IteoIcon name="receipt" size={20} className="text-iteo-black/70" />
                     </div>
-                    <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-2">
-                      <p className="text-lg font-bold text-iteo-black">
-                        {payment.amount.toLocaleString('tr-TR')} ₺
+                    <div>
+                      <p className="font-semibold text-iteo-black">
+                        {typeLabels[payment.type] ?? payment.type}
                       </p>
-                      <StatusBadge
-                        label={statusLabels[payment.status] ?? payment.status}
-                        tone={paymentStatusTone(payment.status)}
-                      />
+                      <p className="mt-0.5 text-sm text-iteo-gray-500">
+                        {payment.paidAt
+                          ? new Date(payment.paidAt).toLocaleString('tr-TR')
+                          : 'Ödeme tarihi bekleniyor'}
+                      </p>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </SectionCard>
-        </div>
-      </div>
+                  </div>
+                  <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-2">
+                    <p className="text-lg font-bold text-iteo-black">
+                      {payment.amount.toLocaleString('tr-TR')} ₺
+                    </p>
+                    <StatusBadge
+                      label={statusLabels[payment.status] ?? payment.status}
+                      tone={paymentStatusTone(payment.status)}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
     </div>
   );
 }
